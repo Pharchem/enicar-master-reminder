@@ -9,8 +9,8 @@
 // http://localhost:8747/index.html — with the placeholders below unchanged, the
 // dashboard auto-uses the local snapshot, /audit.csv and /writeback mock endpoint.
 window.ENICAR_CONFIG = {
-  SHEET_CSV_URL: "PASTE_PUBLISHED_MASTER_CSV_URL_HERE",
-  AUDIT_CSV_URL: "PASTE_PUBLISHED_AUDITLOG_CSV_URL_HERE",
+  SHEET_CSV_URL: "https://docs.google.com/spreadsheets/d/e/2PACX-1vT3x9hcQTOl8tKtrzcS7tLas3u268_2lx1rwAhmpgjWHVbryTPSxxzOlljYRfLV5k6hS8KPDzlrmhcv/pub?gid=1690372004&single=true&output=csv",
+  AUDIT_CSV_URL: "https://docs.google.com/spreadsheets/d/e/2PACX-1vT3x9hcQTOl8tKtrzcS7tLas3u268_2lx1rwAhmpgjWHVbryTPSxxzOlljYRfLV5k6hS8KPDzlrmhcv/pub?gid=243181721&single=true&output=csv",
   WRITEBACK_URL: "PASTE_DEPLOYED_APPS_SCRIPT_WEBAPP_URL_HERE",
   SNAPSHOT_CSV: "MASTER_consolidated.csv",
   LOCAL_AUDIT: "/audit.csv",

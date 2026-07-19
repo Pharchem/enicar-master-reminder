@@ -3,10 +3,10 @@
 
 # ---- Data source ------------------------------------------------------------
 # Published CSV of the MASTER tab (File > Share > Publish to web > MASTER > CSV).
-sheet_csv_url: "PASTE_PUBLISHED_MASTER_CSV_URL_HERE"
+sheet_csv_url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vT3x9hcQTOl8tKtrzcS7tLas3u268_2lx1rwAhmpgjWHVbryTPSxxzOlljYRfLV5k6hS8KPDzlrmhcv/pub?gid=1690372004&single=true&output=csv"
 # Published CSV of the AuditLog tab (same dialog, AuditLog tab). Used by the
 # dashboard for the rescheduled-2+-times watch list; the engine does not need it.
-audit_csv_url: "PASTE_PUBLISHED_AUDITLOG_CSV_URL_HERE"
+audit_csv_url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vT3x9hcQTOl8tKtrzcS7tLas3u268_2lx1rwAhmpgjWHVbryTPSxxzOlljYRfLV5k6hS8KPDzlrmhcv/pub?gid=243181721&single=true&output=csv"
 
 # Fallback used ONLY for dry-run/simulation when the Sheet URL is not yet set.
 # The live engine ignores this and fails loudly if sheet_csv_url is a placeholder.
