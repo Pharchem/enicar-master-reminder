@@ -1,0 +1,62 @@
+# Enicar Master Reminder System — configuration (v3)
+# Everything a human must supply before go-live is here. See SETUP.md.
+
+# ---- Data source ------------------------------------------------------------
+# Published CSV of the MASTER tab (File > Share > Publish to web > MASTER > CSV).
+sheet_csv_url: "PASTE_PUBLISHED_MASTER_CSV_URL_HERE"
+# Published CSV of the AuditLog tab (same dialog, AuditLog tab). Used by the
+# dashboard for the rescheduled-2+-times watch list; the engine does not need it.
+audit_csv_url: "PASTE_PUBLISHED_AUDITLOG_CSV_URL_HERE"
+
+# Fallback used ONLY for dry-run/simulation when the Sheet URL is not yet set.
+# The live engine ignores this and fails loudly if sheet_csv_url is a placeholder.
+local_fallback_csv: "data/sheets/MASTER_consolidated.csv"
+
+# ---- Identity / routing -----------------------------------------------------
+timezone: "Asia/Kolkata"            # all date math in IST
+director_email: "info@pharchem.in"  # FROM address on every email
+
+department_emails:
+  QA: "qa@enicarpharma.com"
+  QC: "qc@enicarpharma.com"
+  Micro: "micro@enicarpharma.com"
+  Engineering: "engineering@enicarpharma.com"
+
+# QA oversight: CC'd on every reminder to every department.
+# (Automatically skipped when the recipient IS QA — no self-duplication.)
+qa_oversight_cc: "qa@enicarpharma.com"
+
+# ADMIN escalation CC — added ONLY on [CRITICAL] escalation emails.
+admin_cc:
+  - "swaralisave@enicarpharma.com"
+  - "mkverma@enicarpharma.com"
+  - "nimishpatil@enicarpharma.com"
+
+# ---- Cadence ----------------------------------------------------------------
+cadence_start_date: "2026-07-20"    # normal cadence begins here
+# One-time baseline sweep: one consolidated email per department listing all open
+# tasks, asking teams to confirm on the dashboard what is already complete.
+# Sent once (recorded in the sent-log); intended to run before cadence_start_date.
+baseline_sweep_enabled: true
+report_grace_days: 10               # report_due_date = due_date + 10 (informational;
+                                    # the register column is authoritative)
+nag_interval_days: 3                # status/nag + escalation repeat interval
+
+# ---- SMTP (Gmail app password) ----------------------------------------------
+# Credentials come ONLY from env / GitHub secrets: MAIL_USERNAME, MAIL_APP_PASSWORD.
+smtp_host: "smtp.gmail.com"
+smtp_port: 587
+
+# ---- Behaviour ---------------------------------------------------------------
+dry_run_default: true               # nothing sends unless DRY_RUN=false explicitly
+high_volume_daily_threshold: 10     # flag any day exceeding this many emails
+# When true, collapse each department's touches into ONE digest email per day
+# (recommended if the simulation shows volume over the threshold).
+# Launch posture: ON until the baseline sweep clears the backlog (simulation showed
+# ~483 per-task emails/day, 96.6% critical; batched = max 4/day).
+batch_by_department: true
+
+# ---- Write-back (Apps Script web app) ----------------------------------------
+# Deployed web-app URL (SETUP.md step 3). The dashboard posts ticks/reschedules here.
+# The engine itself never writes to the Sheet — only the Apps Script does.
+apps_script_url: "PASTE_DEPLOYED_APPS_SCRIPT_WEBAPP_URL_HERE"

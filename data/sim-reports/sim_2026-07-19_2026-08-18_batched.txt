@@ -1,0 +1,43 @@
+# Reminder simulation 2026-07-19 .. 2026-08-18  (31 days)
+# Mode: DEPARTMENT-BATCHED   High-volume threshold: 10 emails/day
+# Data source: local fallback CSV
+
+TOTAL emails: 124   TOTAL touches: 14969   CRITICAL touches: 14466   avg/day: 4.0   peak-day flagged: 0
+By department (touches): {'Engineering': 11607, 'Micro': 1828, 'QA': 949, 'QC': 585}
+By touch type: {'baseline': 4, 'action_critical': 14466, 'start': 213, 'high_freq': 25, 'status_nag': 53, 'planning': 208}
+
+No day exceeds 10 emails. Per-task cadence is sustainable.
+
+## Per-day detail
+
+2026-07-19 (Sun)  emails=   4  touches=   4  critical=   0  {'Engineering': 1, 'Micro': 1, 'QA': 1, 'QC': 1}
+2026-07-20 (Mon)  emails=   4  touches= 462  critical= 462  {'Engineering': 366, 'Micro': 62, 'QA': 17, 'QC': 17}
+2026-07-21 (Tue)  emails=   4  touches= 492  critical= 488  {'Engineering': 349, 'Micro': 59, 'QA': 62, 'QC': 22}
+2026-07-22 (Wed)  emails=   4  touches= 420  critical= 410  {'Engineering': 344, 'Micro': 51, 'QA': 15, 'QC': 10}
+2026-07-23 (Thu)  emails=   4  touches= 483  critical= 462  {'Engineering': 386, 'Micro': 63, 'QA': 17, 'QC': 17}
+2026-07-24 (Fri)  emails=   4  touches= 493  critical= 492  {'Engineering': 349, 'Micro': 60, 'QA': 62, 'QC': 22}
+2026-07-25 (Sat)  emails=   4  touches= 421  critical= 413  {'Engineering': 344, 'Micro': 52, 'QA': 15, 'QC': 10}
+2026-07-26 (Sun)  emails=   4  touches= 483  critical= 463  {'Engineering': 386, 'Micro': 63, 'QA': 17, 'QC': 17}
+2026-07-27 (Mon)  emails=   4  touches= 499  critical= 493  {'Engineering': 349, 'Micro': 60, 'QA': 62, 'QC': 28}
+2026-07-28 (Tue)  emails=   4  touches= 422  critical= 414  {'Engineering': 344, 'Micro': 52, 'QA': 16, 'QC': 10}
+2026-07-29 (Wed)  emails=   4  touches= 488  critical= 483  {'Engineering': 386, 'Micro': 63, 'QA': 17, 'QC': 22}
+2026-07-30 (Thu)  emails=   4  touches= 561  critical= 493  {'Engineering': 411, 'Micro': 60, 'QA': 62, 'QC': 28}
+2026-07-31 (Fri)  emails=   4  touches= 422  critical= 414  {'Engineering': 344, 'Micro': 52, 'QA': 16, 'QC': 10}
+2026-08-01 (Sat)  emails=   4  touches= 490  critical= 483  {'Engineering': 386, 'Micro': 65, 'QA': 17, 'QC': 22}
+2026-08-02 (Sun)  emails=   4  touches= 564  critical= 499  {'Engineering': 411, 'Micro': 62, 'QA': 62, 'QC': 29}
+2026-08-03 (Mon)  emails=   4  touches= 424  critical= 422  {'Engineering': 344, 'Micro': 54, 'QA': 16, 'QC': 10}
+2026-08-04 (Tue)  emails=   4  touches= 492  critical= 485  {'Engineering': 386, 'Micro': 67, 'QA': 17, 'QC': 22}
+2026-08-05 (Wed)  emails=   4  touches= 565  critical= 563  {'Engineering': 411, 'Micro': 62, 'QA': 62, 'QC': 30}
+2026-08-06 (Thu)  emails=   4  touches= 484  critical= 424  {'Engineering': 404, 'Micro': 54, 'QA': 16, 'QC': 10}
+2026-08-07 (Fri)  emails=   4  touches= 492  critical= 487  {'Engineering': 386, 'Micro': 67, 'QA': 17, 'QC': 22}
+2026-08-08 (Sat)  emails=   4  touches= 567  critical= 564  {'Engineering': 411, 'Micro': 64, 'QA': 62, 'QC': 30}
+2026-08-09 (Sun)  emails=   4  touches= 486  critical= 424  {'Engineering': 404, 'Micro': 56, 'QA': 16, 'QC': 10}
+2026-08-10 (Mon)  emails=   4  touches= 494  critical= 487  {'Engineering': 386, 'Micro': 69, 'QA': 17, 'QC': 22}
+2026-08-11 (Tue)  emails=   4  touches= 568  critical= 567  {'Engineering': 411, 'Micro': 65, 'QA': 62, 'QC': 30}
+2026-08-12 (Wed)  emails=   4  touches= 486  critical= 486  {'Engineering': 404, 'Micro': 56, 'QA': 16, 'QC': 10}
+2026-08-13 (Thu)  emails=   4  touches= 545  critical= 489  {'Engineering': 437, 'Micro': 69, 'QA': 17, 'QC': 22}
+2026-08-14 (Fri)  emails=   4  touches= 568  critical= 568  {'Engineering': 411, 'Micro': 65, 'QA': 62, 'QC': 30}
+2026-08-15 (Sat)  emails=   4  touches= 488  critical= 486  {'Engineering': 404, 'Micro': 58, 'QA': 16, 'QC': 10}
+2026-08-16 (Sun)  emails=   4  touches= 547  critical= 489  {'Engineering': 437, 'Micro': 71, 'QA': 17, 'QC': 22}
+2026-08-17 (Mon)  emails=   4  touches= 569  critical= 568  {'Engineering': 411, 'Micro': 66, 'QA': 62, 'QC': 30}
+2026-08-18 (Tue)  emails=   4  touches= 490  critical= 488  {'Engineering': 404, 'Micro': 60, 'QA': 16, 'QC': 10}

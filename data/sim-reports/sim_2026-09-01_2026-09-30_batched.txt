@@ -1,0 +1,42 @@
+# Reminder simulation 2026-09-01 .. 2026-09-30  (30 days)
+# Mode: DEPARTMENT-BATCHED   High-volume threshold: 10 emails/day
+# Data source: local fallback CSV
+
+TOTAL emails: 120   TOTAL touches: 17955   avg/day: 4.0   peak-day flagged: 0
+By department (touches): {'Engineering': 13823, 'Micro': 2201, 'QA': 1198, 'QC': 733}
+By touch type: {'high_freq': 25, 'overdue': 17308, 'planning': 194, 'start': 12, 'specific_start': 190, 'report': 190, 'process': 12, 'completion_check': 12, 'report_demand': 12}
+
+No day exceeds 10 emails. Per-task cadence is sustainable.
+
+## Per-day detail
+
+2026-09-01 (Tue)  emails=   4  touches= 600  {'Engineering': 424, 'Micro': 69, 'QA': 64, 'QC': 43}
+2026-09-02 (Wed)  emails=   4  touches= 493  {'Engineering': 404, 'Micro': 63, 'QA': 16, 'QC': 10}
+2026-09-03 (Thu)  emails=   4  touches= 601  {'Engineering': 482, 'Micro': 75, 'QA': 17, 'QC': 27}
+2026-09-04 (Fri)  emails=   4  touches= 590  {'Engineering': 424, 'Micro': 71, 'QA': 64, 'QC': 31}
+2026-09-05 (Sat)  emails=   4  touches= 494  {'Engineering': 404, 'Micro': 63, 'QA': 16, 'QC': 11}
+2026-09-06 (Sun)  emails=   4  touches= 601  {'Engineering': 482, 'Micro': 75, 'QA': 17, 'QC': 27}
+2026-09-07 (Mon)  emails=   4  touches= 635  {'Engineering': 469, 'Micro': 71, 'QA': 64, 'QC': 31}
+2026-09-08 (Tue)  emails=   4  touches= 495  {'Engineering': 404, 'Micro': 65, 'QA': 16, 'QC': 10}
+2026-09-09 (Wed)  emails=   4  touches= 603  {'Engineering': 482, 'Micro': 77, 'QA': 17, 'QC': 27}
+2026-09-10 (Thu)  emails=   4  touches= 647  {'Engineering': 467, 'Micro': 73, 'QA': 64, 'QC': 43}
+2026-09-11 (Fri)  emails=   4  touches= 496  {'Engineering': 404, 'Micro': 66, 'QA': 16, 'QC': 10}
+2026-09-12 (Sat)  emails=   4  touches= 603  {'Engineering': 482, 'Micro': 77, 'QA': 17, 'QC': 27}
+2026-09-13 (Sun)  emails=   4  touches= 635  {'Engineering': 467, 'Micro': 73, 'QA': 64, 'QC': 31}
+2026-09-14 (Mon)  emails=   4  touches= 539  {'Engineering': 447, 'Micro': 66, 'QA': 16, 'QC': 10}
+2026-09-15 (Tue)  emails=   4  touches= 634  {'Engineering': 482, 'Micro': 80, 'QA': 45, 'QC': 27}
+2026-09-16 (Wed)  emails=   4  touches= 636  {'Engineering': 467, 'Micro': 74, 'QA': 64, 'QC': 31}
+2026-09-17 (Thu)  emails=   4  touches= 540  {'Engineering': 447, 'Micro': 67, 'QA': 16, 'QC': 10}
+2026-09-18 (Fri)  emails=   4  touches= 636  {'Engineering': 482, 'Micro': 82, 'QA': 45, 'QC': 27}
+2026-09-19 (Sat)  emails=   4  touches= 666  {'Engineering': 467, 'Micro': 76, 'QA': 92, 'QC': 31}
+2026-09-20 (Sun)  emails=   4  touches= 552  {'Engineering': 447, 'Micro': 67, 'QA': 16, 'QC': 22}
+2026-09-21 (Mon)  emails=   4  touches= 684  {'Engineering': 525, 'Micro': 83, 'QA': 49, 'QC': 27}
+2026-09-22 (Tue)  emails=   4  touches= 638  {'Engineering': 467, 'Micro': 76, 'QA': 64, 'QC': 31}
+2026-09-23 (Wed)  emails=   4  touches= 542  {'Engineering': 447, 'Micro': 69, 'QA': 16, 'QC': 10}
+2026-09-24 (Thu)  emails=   4  touches= 661  {'Engineering': 501, 'Micro': 84, 'QA': 49, 'QC': 27}
+2026-09-25 (Fri)  emails=   4  touches= 660  {'Engineering': 467, 'Micro': 78, 'QA': 72, 'QC': 43}
+2026-09-26 (Sat)  emails=   4  touches= 541  {'Engineering': 447, 'Micro': 68, 'QA': 16, 'QC': 10}
+2026-09-27 (Sun)  emails=   4  touches= 661  {'Engineering': 501, 'Micro': 84, 'QA': 49, 'QC': 27}
+2026-09-28 (Mon)  emails=   4  touches= 666  {'Engineering': 486, 'Micro': 77, 'QA': 68, 'QC': 35}
+2026-09-29 (Tue)  emails=   4  touches= 545  {'Engineering': 447, 'Micro': 68, 'QA': 20, 'QC': 10}
+2026-09-30 (Wed)  emails=   4  touches= 661  {'Engineering': 501, 'Micro': 84, 'QA': 49, 'QC': 27}

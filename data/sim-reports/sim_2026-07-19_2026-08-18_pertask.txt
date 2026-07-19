@@ -1,0 +1,75 @@
+# Reminder simulation 2026-07-19 .. 2026-08-18  (31 days)
+# Mode: PER-TASK   High-volume threshold: 10 emails/day
+# Data source: local fallback CSV
+
+TOTAL emails: 14969   TOTAL touches: 14969   CRITICAL touches: 14466   avg/day: 482.9   peak-day flagged: 30
+By department (touches): {'Engineering': 11607, 'Micro': 1828, 'QA': 949, 'QC': 585}
+By touch type: {'baseline': 4, 'action_critical': 14466, 'start': 213, 'high_freq': 25, 'status_nag': 53, 'planning': 208}
+
+DAYS OVER 10 EMAILS (30):
+   2026-07-20: 462 emails
+   2026-07-21: 492 emails
+   2026-07-22: 420 emails
+   2026-07-23: 483 emails
+   2026-07-24: 493 emails
+   2026-07-25: 421 emails
+   2026-07-26: 483 emails
+   2026-07-27: 499 emails
+   2026-07-28: 422 emails
+   2026-07-29: 488 emails
+   2026-07-30: 561 emails
+   2026-07-31: 422 emails
+   2026-08-01: 490 emails
+   2026-08-02: 564 emails
+   2026-08-03: 424 emails
+   2026-08-04: 492 emails
+   2026-08-05: 565 emails
+   2026-08-06: 484 emails
+   2026-08-07: 492 emails
+   2026-08-08: 567 emails
+   2026-08-09: 486 emails
+   2026-08-10: 494 emails
+   2026-08-11: 568 emails
+   2026-08-12: 486 emails
+   2026-08-13: 545 emails
+   2026-08-14: 568 emails
+   2026-08-15: 488 emails
+   2026-08-16: 547 emails
+   2026-08-17: 569 emails
+   2026-08-18: 490 emails
+
+RECOMMENDATION: volume exceeds the per-day threshold on the days above. Enable batch_by_department (one digest per department per day) to cap volume at <= 4 emails/day. Re-run this simulation with --batched to compare.
+
+## Per-day detail
+
+2026-07-19 (Sun)  emails=   4  touches=   4  critical=   0  {'Engineering': 1, 'Micro': 1, 'QA': 1, 'QC': 1}
+2026-07-20 (Mon)  emails= 462  touches= 462  critical= 462  {'Engineering': 366, 'Micro': 62, 'QA': 17, 'QC': 17}  <-- OVER THRESHOLD
+2026-07-21 (Tue)  emails= 492  touches= 492  critical= 488  {'Engineering': 349, 'Micro': 59, 'QA': 62, 'QC': 22}  <-- OVER THRESHOLD
+2026-07-22 (Wed)  emails= 420  touches= 420  critical= 410  {'Engineering': 344, 'Micro': 51, 'QA': 15, 'QC': 10}  <-- OVER THRESHOLD
+2026-07-23 (Thu)  emails= 483  touches= 483  critical= 462  {'Engineering': 386, 'Micro': 63, 'QA': 17, 'QC': 17}  <-- OVER THRESHOLD
+2026-07-24 (Fri)  emails= 493  touches= 493  critical= 492  {'Engineering': 349, 'Micro': 60, 'QA': 62, 'QC': 22}  <-- OVER THRESHOLD
+2026-07-25 (Sat)  emails= 421  touches= 421  critical= 413  {'Engineering': 344, 'Micro': 52, 'QA': 15, 'QC': 10}  <-- OVER THRESHOLD
+2026-07-26 (Sun)  emails= 483  touches= 483  critical= 463  {'Engineering': 386, 'Micro': 63, 'QA': 17, 'QC': 17}  <-- OVER THRESHOLD
+2026-07-27 (Mon)  emails= 499  touches= 499  critical= 493  {'Engineering': 349, 'Micro': 60, 'QA': 62, 'QC': 28}  <-- OVER THRESHOLD
+2026-07-28 (Tue)  emails= 422  touches= 422  critical= 414  {'Engineering': 344, 'Micro': 52, 'QA': 16, 'QC': 10}  <-- OVER THRESHOLD
+2026-07-29 (Wed)  emails= 488  touches= 488  critical= 483  {'Engineering': 386, 'Micro': 63, 'QA': 17, 'QC': 22}  <-- OVER THRESHOLD
+2026-07-30 (Thu)  emails= 561  touches= 561  critical= 493  {'Engineering': 411, 'Micro': 60, 'QA': 62, 'QC': 28}  <-- OVER THRESHOLD
+2026-07-31 (Fri)  emails= 422  touches= 422  critical= 414  {'Engineering': 344, 'Micro': 52, 'QA': 16, 'QC': 10}  <-- OVER THRESHOLD
+2026-08-01 (Sat)  emails= 490  touches= 490  critical= 483  {'Engineering': 386, 'Micro': 65, 'QA': 17, 'QC': 22}  <-- OVER THRESHOLD
+2026-08-02 (Sun)  emails= 564  touches= 564  critical= 499  {'Engineering': 411, 'Micro': 62, 'QA': 62, 'QC': 29}  <-- OVER THRESHOLD
+2026-08-03 (Mon)  emails= 424  touches= 424  critical= 422  {'Engineering': 344, 'Micro': 54, 'QA': 16, 'QC': 10}  <-- OVER THRESHOLD
+2026-08-04 (Tue)  emails= 492  touches= 492  critical= 485  {'Engineering': 386, 'Micro': 67, 'QA': 17, 'QC': 22}  <-- OVER THRESHOLD
+2026-08-05 (Wed)  emails= 565  touches= 565  critical= 563  {'Engineering': 411, 'Micro': 62, 'QA': 62, 'QC': 30}  <-- OVER THRESHOLD
+2026-08-06 (Thu)  emails= 484  touches= 484  critical= 424  {'Engineering': 404, 'Micro': 54, 'QA': 16, 'QC': 10}  <-- OVER THRESHOLD
+2026-08-07 (Fri)  emails= 492  touches= 492  critical= 487  {'Engineering': 386, 'Micro': 67, 'QA': 17, 'QC': 22}  <-- OVER THRESHOLD
+2026-08-08 (Sat)  emails= 567  touches= 567  critical= 564  {'Engineering': 411, 'Micro': 64, 'QA': 62, 'QC': 30}  <-- OVER THRESHOLD
+2026-08-09 (Sun)  emails= 486  touches= 486  critical= 424  {'Engineering': 404, 'Micro': 56, 'QA': 16, 'QC': 10}  <-- OVER THRESHOLD
+2026-08-10 (Mon)  emails= 494  touches= 494  critical= 487  {'Engineering': 386, 'Micro': 69, 'QA': 17, 'QC': 22}  <-- OVER THRESHOLD
+2026-08-11 (Tue)  emails= 568  touches= 568  critical= 567  {'Engineering': 411, 'Micro': 65, 'QA': 62, 'QC': 30}  <-- OVER THRESHOLD
+2026-08-12 (Wed)  emails= 486  touches= 486  critical= 486  {'Engineering': 404, 'Micro': 56, 'QA': 16, 'QC': 10}  <-- OVER THRESHOLD
+2026-08-13 (Thu)  emails= 545  touches= 545  critical= 489  {'Engineering': 437, 'Micro': 69, 'QA': 17, 'QC': 22}  <-- OVER THRESHOLD
+2026-08-14 (Fri)  emails= 568  touches= 568  critical= 568  {'Engineering': 411, 'Micro': 65, 'QA': 62, 'QC': 30}  <-- OVER THRESHOLD
+2026-08-15 (Sat)  emails= 488  touches= 488  critical= 486  {'Engineering': 404, 'Micro': 58, 'QA': 16, 'QC': 10}  <-- OVER THRESHOLD
+2026-08-16 (Sun)  emails= 547  touches= 547  critical= 489  {'Engineering': 437, 'Micro': 71, 'QA': 17, 'QC': 22}  <-- OVER THRESHOLD
+2026-08-17 (Mon)  emails= 569  touches= 569  critical= 568  {'Engineering': 411, 'Micro': 66, 'QA': 62, 'QC': 30}  <-- OVER THRESHOLD
+2026-08-18 (Tue)  emails= 490  touches= 490  critical= 488  {'Engineering': 404, 'Micro': 60, 'QA': 16, 'QC': 10}  <-- OVER THRESHOLD

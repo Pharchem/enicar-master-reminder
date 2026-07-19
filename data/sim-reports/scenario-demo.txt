@@ -1,0 +1,154 @@
+========================================================================================
+### 2026-07-19
+# DRY-RUN reminder log 2026-07-19 (IST) — 4 message(s), 4 touch(es)
+
+--- DRY-RUN [QA] 2026-07-19
+TO: qa@enicarpharma.com
+CC: (none)
+PRIORITY: normal
+SUBJECT: [BASELINE] QA: confirm completed tasks on the dashboard (1 open items)
+Team QA,
+
+We are moving all recurring compliance tasks to the Master Reminder Dashboard. Below are ALL 1 of your currently open task occurrences from the register. Many were completed before this system existed — please go through the dashboard and tick 'action completed' (and 'report completed' where the report is filed) for everything already done, so reminders start from a clean state.
+
+Anything left unticked will enter the reminder and escalation cadence from 2026-07-20.
+
+  - DEMO-RESCHED | Temperature mapping - Solvent area | due 2026-07-28 | action+report pending
+
+This is a one-time baseline message.
+
+
+--- DRY-RUN [QC] 2026-07-19
+TO: qc@enicarpharma.com
+CC: qa@enicarpharma.com
+PRIORITY: normal
+SUBJECT: [BASELINE] QC: confirm completed tasks on the dashboard (2 open items)
+Team QC,
+
+We are moving all recurring compliance tasks to the Master Reminder Dashboard. Below are ALL 2 of your currently open task occurrences from the register. Many were completed before this system existed — please go through the dashboard and tick 'action completed' (and 'report completed' where the report is filed) for everything already done, so reminders start from a clean state.
+
+Anything left unticked will enter the reminder and escalation cadence from 2026-07-20.
+
+  - DEMO-NORMAL | Calibrate FTIR (ID QCI/02052) | due 2026-07-25 | action+report pending
+  - DEMO-MONTHWIN | Calibrate Refractometer (ID QCI/02004) | due 2026-08-01 | action+report pending
+
+This is a one-time baseline message.
+
+
+--- DRY-RUN [Micro] 2026-07-19
+TO: micro@enicarpharma.com
+CC: qa@enicarpharma.com
+PRIORITY: normal
+SUBJECT: [BASELINE] Micro: confirm completed tasks on the dashboard (2 open items)
+Team Micro,
+
+We are moving all recurring compliance tasks to the Master Reminder Dashboard. Below are ALL 2 of your currently open task occurrences from the register. Many were completed before this system existed — please go through the dashboard and tick 'action completed' (and 'report completed' where the report is filed) for everything already done, so reminders start from a clean state.
+
+Anything left unticked will enter the reminder and escalation cadence from 2026-07-20.
+
+  - DEMO-REPORT-OD | Re-validate Sterilization Autoclave (ID QCM/02030) | due 2026-07-10 | report pending
+  - DEMO-HIGHFREQ | EM settle plate - Micro section (ID 128/01) | due 2026-07-22 | action+report pending
+
+This is a one-time baseline message.
+
+
+--- DRY-RUN [Engineering] 2026-07-19
+TO: engineering@enicarpharma.com
+CC: qa@enicarpharma.com
+PRIORITY: normal
+SUBJECT: [BASELINE] Engineering: confirm completed tasks on the dashboard (1 open items)
+Team Engineering,
+
+We are moving all recurring compliance tasks to the Master Reminder Dashboard. Below are ALL 1 of your currently open task occurrences from the register. Many were completed before this system existed — please go through the dashboard and tick 'action completed' (and 'report completed' where the report is filed) for everything already done, so reminders start from a clean state.
+
+Anything left unticked will enter the reminder and escalation cadence from 2026-07-20.
+
+  - DEMO-OVERDUE | PM - Boiler (ID UTL/04058) | due 2026-07-10 | action+report pending
+
+This is a one-time baseline message.
+
+
+========================================================================================
+### 2026-07-20
+# DRY-RUN reminder log 2026-07-20 (IST) — 0 message(s), 0 touch(es)
+
+
+========================================================================================
+### 2026-07-22
+# DRY-RUN reminder log 2026-07-22 (IST) — 3 message(s), 3 touch(es)
+
+--- DRY-RUN [QC] 2026-07-22
+TO: qc@enicarpharma.com
+CC: qa@enicarpharma.com
+PRIORITY: normal
+SUBJECT: [PLANNING] Calibrate FTIR (ID QCI/02052) — due 2026-07-25
+Calibration Calibrate FTIR (ID QCI/02052) (QC) is due in 3 days, on 2026-07-25. Plan it now. Report due 2026-08-04.
+
+--- DRY-RUN [CRITICAL] [Engineering] 2026-07-22
+TO: engineering@enicarpharma.com
+CC: qa@enicarpharma.com, swaralisave@enicarpharma.com, mkverma@enicarpharma.com, nimishpatil@enicarpharma.com
+PRIORITY: high (X-Priority: 1)
+SUBJECT: [CRITICAL] Overdue 12d: PM - Boiler (ID UTL/04058)
+Preventive maintenance PM - Boiler (ID UTL/04058) (Engineering) was due 2026-07-10 and is OVERDUE by 12 day(s) with no completion ticked. Complete it now and tick the dashboard, or log a reschedule with reason.
+
+--- DRY-RUN [Micro] 2026-07-22
+TO: micro@enicarpharma.com
+CC: qa@enicarpharma.com
+PRIORITY: normal
+SUBJECT: [TODAY] EM settle plate - Micro section (ID 128/01) — perform today
+Scheduled environmental monitoring today (2026-07-22): EM settle plate - Micro section (ID 128/01) (Micro). Perform it, then tick 'action completed' on the dashboard.
+
+========================================================================================
+### 2026-07-24
+# DRY-RUN reminder log 2026-07-24 (IST) — 1 message(s), 1 touch(es)
+
+--- DRY-RUN [CRITICAL] [Micro] 2026-07-24
+TO: micro@enicarpharma.com
+CC: qa@enicarpharma.com, swaralisave@enicarpharma.com, mkverma@enicarpharma.com, nimishpatil@enicarpharma.com
+PRIORITY: high (X-Priority: 1)
+SUBJECT: [CRITICAL] Report overdue 4d: Re-validate Sterilization Autoclave (ID QCM/02030)
+The report for re-validation Re-validate Sterilization Autoclave (ID QCM/02030) (Micro) is OVERDUE by 4 day(s) — it was due 2026-07-20 (action completed 2026-07-12). Upload the report and tick 'report completed' on the dashboard today.
+
+========================================================================================
+### 2026-07-25
+# DRY-RUN reminder log 2026-07-25 (IST) — 4 message(s), 4 touch(es)
+
+--- DRY-RUN [QC] 2026-07-25
+TO: qc@enicarpharma.com
+CC: qa@enicarpharma.com
+PRIORITY: normal
+SUBJECT: [DUE TODAY] Calibrate FTIR (ID QCI/02052)
+Due today (2026-07-25): calibration Calibrate FTIR (ID QCI/02052) (QC). Perform it and tick 'action completed' on the dashboard. Report due 2026-08-04.
+
+--- DRY-RUN [CRITICAL] [Engineering] 2026-07-25
+TO: engineering@enicarpharma.com
+CC: qa@enicarpharma.com, swaralisave@enicarpharma.com, mkverma@enicarpharma.com, nimishpatil@enicarpharma.com
+PRIORITY: high (X-Priority: 1)
+SUBJECT: [CRITICAL] Overdue 15d: PM - Boiler (ID UTL/04058)
+Preventive maintenance PM - Boiler (ID UTL/04058) (Engineering) was due 2026-07-10 and is OVERDUE by 15 day(s) with no completion ticked. Complete it now and tick the dashboard, or log a reschedule with reason.
+
+--- DRY-RUN [QA] 2026-07-25
+TO: qa@enicarpharma.com
+CC: (none)
+PRIORITY: normal
+SUBJECT: [PLANNING] Temperature mapping - Solvent area — due 2026-07-28
+Temperature mapping Temperature mapping - Solvent area (QA) is due in 3 days, on 2026-07-28. Plan it now. Report due 2026-08-07. NOTE: this task was rescheduled from 2026-07-15 (reason: Mapping probes with vendor for repair).
+
+--- DRY-RUN [CRITICAL] [Micro] 2026-07-25
+TO: micro@enicarpharma.com
+CC: qa@enicarpharma.com, swaralisave@enicarpharma.com, mkverma@enicarpharma.com, nimishpatil@enicarpharma.com
+PRIORITY: high (X-Priority: 1)
+SUBJECT: [CRITICAL] Overdue 3d: EM settle plate - Micro section (ID 128/01)
+environmental monitoring EM settle plate - Micro section (ID 128/01) (Micro) was due 2026-07-22 and is OVERDUE by 3 day(s) with no completion ticked. Perform it now and tick 'action completed', or log a reschedule with reason on the dashboard.
+
+========================================================================================
+### 2026-08-04
+# DRY-RUN reminder log 2026-08-04 (IST) — 1 message(s), 1 touch(es)
+
+--- DRY-RUN [QC] 2026-08-04
+TO: qc@enicarpharma.com
+CC: qa@enicarpharma.com
+PRIORITY: normal
+SUBJECT: [STATUS] Calibrate Refractometer (ID QCI/02004) — what's the status?
+Status check: calibration Calibrate Refractometer (ID QCI/02004) (QC) is due within August 2026 and is not yet ticked complete. Update the dashboard — or reschedule with a reason if it genuinely cannot be done this month.
+
