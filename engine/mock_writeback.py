@@ -97,6 +97,22 @@ def handle(params: dict) -> dict:
             hit["report_link"] = link
         audit(task_id, dept, "tick_report", "report_status", "pending",
               "done" + (f" ({link})" if link else ""), "", "dashboard")
+    elif action == "untick_action":
+        if hit["action_status"].lower() != "done":
+            return {"ok": True, "noop": True, "message": "action is not marked done"}
+        if hit["report_status"].lower() == "done":
+            return {"ok": False, "error": "report is marked done — undo the report first"}
+        reason = params.get("reason", [""])[0].strip()
+        hit["action_done_date"] = ""
+        hit["action_status"] = "pending"
+        audit(task_id, dept, "untick_action", "action_status", "done", "pending", reason, "dashboard")
+    elif action == "untick_report":
+        if hit["report_status"].lower() != "done":
+            return {"ok": True, "noop": True, "message": "report is not marked done"}
+        reason = params.get("reason", [""])[0].strip()
+        hit["report_done_date"] = ""
+        hit["report_status"] = "pending"
+        audit(task_id, dept, "untick_report", "report_status", "done", "pending", reason, "dashboard")
     elif action == "reschedule":
         new_due = params.get("new_due_date", [""])[0].strip()
         reason = params.get("reason", [""])[0].strip()

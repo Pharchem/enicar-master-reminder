@@ -95,6 +95,34 @@ function doPost(e) {
       return json_({ ok: true, task_id: taskId, report_done_date: today });
     }
 
+    if (action === 'untick_action') {
+      if (String(row[col.action_status]).toLowerCase() !== 'done') {
+        return json_({ ok: true, noop: true, message: 'action is not marked done' });
+      }
+      if (String(row[col.report_status]).toLowerCase() === 'done') {
+        return json_({ ok: false, error: 'report is marked done — undo the report first' });
+      }
+      var uaReason = String(p.reason || '').trim();
+      setCell('action_done_date', '');
+      setCell('action_status', 'pending');
+      audit_(ss, taskId, dept, 'untick_action', 'action_status', 'done', 'pending',
+             uaReason, 'dashboard');
+      return json_({ ok: true, task_id: taskId, action_status: 'pending' });
+    }
+
+    if (action === 'untick_report') {
+      if (String(row[col.report_status]).toLowerCase() !== 'done') {
+        return json_({ ok: true, noop: true, message: 'report is not marked done' });
+      }
+      var urReason = String(p.reason || '').trim();
+      setCell('report_done_date', '');
+      setCell('report_status', 'pending');
+      // report_link is left in place — it stays part of the record
+      audit_(ss, taskId, dept, 'untick_report', 'report_status', 'done', 'pending',
+             urReason, 'dashboard');
+      return json_({ ok: true, task_id: taskId, report_status: 'pending' });
+    }
+
     if (action === 'reschedule') {
       var newDue = String(p.new_due_date || '').trim();
       var reason = String(p.reason || '').trim();

@@ -90,6 +90,11 @@
   button.rs{color:var(--muted);font-weight:500}
   button:disabled{opacity:.5;cursor:default}
   .done-note{font-size:12px;color:var(--green);font-weight:600;white-space:nowrap}
+  button.undo{padding:5px 9px;font-size:11.5px;color:var(--muted)}
+  button.undo:hover{border-color:var(--amber);color:var(--amber)}
+  .search{border:1px solid var(--line);background:var(--card);color:var(--ink);
+    border-radius:999px;padding:7px 14px;font-size:13.5px;min-width:210px;flex:0 1 260px}
+  .search:focus{outline:none;border-color:var(--blue)}
   .saving{opacity:.6;pointer-events:none}
   .hf-note{padding:9px 14px;font-size:12px;color:var(--muted);border-top:1px solid var(--line)}
   .hf-toggle{color:var(--blue);cursor:pointer;text-decoration:underline}
@@ -126,6 +131,7 @@
         <div class="sub">Tick tasks done or reschedule with a reason — every change is
           audit-logged with an IST timestamp. <span id="src"></span></div>
       </div>
+      <input type="search" id="search" class="search" placeholder="🔍 Search task, ID, activity…">
       <button class="refresh" id="refreshbtn">↻ Refresh</button>
     </div>
   </header>
@@ -166,7 +172,7 @@
   </div>
 </dialog>
 
-<script src="config.js?v=3"></script>
+<script src="config.js?v=4"></script>
 <script>
 const CFG = window.ENICAR_CONFIG || {};
 const DEPTS = ["QA","QC","Micro","Engineering"];
@@ -208,7 +214,7 @@ const rDone = t => (t.report_status||"").toLowerCase()==="done";
 const OVERLAY_KEY="enicar_pending_v1", OVERLAY_TTL=30*60*1000;
 function loadOverlay(){ try{return JSON.parse(localStorage.getItem(OVERLAY_KEY)||"{}");}catch(e){return {};} }
 function saveOverlay(o){ try{localStorage.setItem(OVERLAY_KEY,JSON.stringify(o));}catch(e){} }
-function rememberPending(id,patch){ const o=loadOverlay(); o[id]={...(o[id]||{}),...patch,ts:Date.now()}; saveOverlay(o); }
+function setPending(id,obj){ const o=loadOverlay(); o[id]={...obj,ts:Date.now()}; saveOverlay(o); }
 function applyOverlay(data){
   const o=loadOverlay(); let changed=false;
   for(const [id,p] of Object.entries(o)){
@@ -216,6 +222,8 @@ function applyOverlay(data){
     const fresh=Date.now()-(p.ts||0) < OVERLAY_TTL;
     if(!t || !fresh){ delete o[id]; changed=true; continue; }
     let sheetCaughtUp=true;
+    if(p.undo_action && aDone(t)){ t.action_status="pending"; t.action_done_date=""; sheetCaughtUp=false; }
+    if(p.undo_report && rDone(t)){ t.report_status="pending"; t.report_done_date=""; sheetCaughtUp=false; }
     if(p.action_done_date && !aDone(t)){ t.action_status="done"; t.action_done_date=p.action_done_date; sheetCaughtUp=false; }
     if(p.report_done_date && !rDone(t)){ t.report_status="done"; t.report_done_date=p.report_done_date;
       if(p.report_link) t.report_link=p.report_link; sheetCaughtUp=false; }
@@ -256,7 +264,8 @@ const BUCKETS=[
   {key:"completed",label:"Completed",           cls:"b-green", chip:"f-green"},
 ];
 
-let DATA=[], RESCHED={}, activeDept="QA", activeFilter="all", showHF={};
+let DATA=[], RESCHED={}, activeDept="QA", activeFilter="all", showHF={}, showAll={}, SEARCH="";
+const SECTION_CAP=100;
 
 /* ---------------------------------- rendering --------------------------------------- */
 function render(){
@@ -292,7 +301,9 @@ function render(){
       +`</div>`;
   } else watch.innerHTML="";
 
-  const rows=DATA.filter(t=>t.department===activeDept);
+  let rows=DATA.filter(t=>t.department===activeDept);
+  if(SEARCH) rows=rows.filter(t=>
+    (t.task_name+" "+t.equipment_or_item_id+" "+(t.activity_type||"")).toLowerCase().includes(SEARCH));
   const byBucket={}; BUCKETS.forEach(b=>byBucket[b.key]=[]);
   rows.forEach(t=>{const c=classify(t);t._c=c;byBucket[c.bucket].push(t);});
 
@@ -313,7 +324,14 @@ function render(){
     html+=`<section class="bucket ${b.cls} ${collapsed}">
       <div class="bhead">${b.label}<span class="count">${items.length}<span class="chev">▾</span></span></div>
       <div class="bbody">`;
-    html+=norm.map(t=>taskRow(t,b.key)).join("");
+    const bkey=activeDept+"|"+b.key;
+    const capped = norm.length>SECTION_CAP && !showAll[bkey] && !SEARCH;
+    html+=(capped?norm.slice(0,SECTION_CAP):norm).map(t=>taskRow(t,b.key)).join("");
+    if(capped){
+      html+=`<div class="hf-note">Showing first ${SECTION_CAP} of ${norm.length} —
+        <span class="hf-toggle" data-more="${bkey}">show all</span>
+        (or use the search box above)</div>`;
+    }
     if(hf.length){
       const key=activeDept+b.key;
       if(showHF[key]){
@@ -333,7 +351,9 @@ function render(){
   const board=document.getElementById("board");
   board.innerHTML=html||`<div class="empty">Nothing here for ${activeDept} 🎉</div>`;
   board.querySelectorAll(".bhead").forEach(h=>h.onclick=()=>h.parentElement.classList.toggle("collapsed"));
-  board.querySelectorAll(".hf-toggle").forEach(el=>el.onclick=()=>{showHF[el.dataset.hf]=!showHF[el.dataset.hf];render();});
+  board.querySelectorAll(".hf-toggle").forEach(el=>el.onclick=()=>{
+    if(el.dataset.more){ showAll[el.dataset.more]=true; render(); return; }
+    showHF[el.dataset.hf]=!showHF[el.dataset.hf];render();});
   board.querySelectorAll("button[data-act]").forEach(btn=>btn.onclick=()=>onAction(btn));
 }
 
@@ -358,10 +378,12 @@ function taskRow(t,bucket){
     (t.rescheduled_from?`<span class="pill">was ${esc(fmtLong(t.rescheduled_from))}</span>`:"");
   let controls;
   if(rDone(t)){
-    controls=`<span class="done-note">✔ Completed ${esc(fmtLong(t.report_done_date||t.action_done_date||""))}</span>`;
+    controls=`<span class="done-note">✔ Completed ${esc(fmtLong(t.report_done_date||t.action_done_date||""))}</span>
+      <button class="rs undo" data-act="untick_report" data-id="${id}">↺ Undo</button>`;
   } else {
     controls=
-      (aDone(t)?`<span class="done-note">✔ done ${esc(fmtLong(t.action_done_date))}</span>`
+      (aDone(t)?`<span class="done-note">✔ done ${esc(fmtLong(t.action_done_date))}</span>
+                 <button class="rs undo" data-act="untick_action" data-id="${id}">↺ Undo</button>`
                :`<button class="act" data-act="tick_action" data-id="${id}">✓ Action done</button>`)+
       `<button class="rep" data-act="tick_report" data-id="${id}">✓ Report done</button>`+
       `<button class="rs" data-act="reschedule" data-id="${id}">↦ Reschedule</button>`;
@@ -409,11 +431,32 @@ async function onAction(btn){
     try{
       await postWB({action:"tick_action",task_id:id});
       t.action_status="done"; t.action_done_date=isoToday();
-      rememberPending(id,{action_done_date:t.action_done_date});
+      setPending(id,{action_done_date:t.action_done_date});
       toast("✓ Saved to the Sheet and audit-logged.","ok"); render();
     }catch(e){
       rowEl&&rowEl.classList.remove("saving"); btn.disabled=false; btn.textContent="✓ Action done";
       toast("✗ Not saved: "+e.message,"bad");
+    }
+  }
+
+  if(act==="untick_action" || act==="untick_report"){
+    const what = act==="untick_action" ? "'action done'" : "the completed report";
+    const reason = prompt("Undo "+what+" — optional reason (recorded in the audit log):","");
+    if(reason===null) return;                      // cancelled
+    rowEl&&rowEl.classList.add("saving");
+    try{
+      await postWB({action:act,task_id:id,reason:reason.trim()});
+      if(act==="untick_action"){ t.action_status="pending"; t.action_done_date="";
+        setPending(id,{undo_action:true}); }
+      else { t.report_status="pending"; t.report_done_date="";
+        setPending(id,{undo_report:true}); }
+      toast("↺ Undone — task is pending again and reminders resume. (Both the tick and the undo stay in the audit log.)","ok");
+      render();
+    }catch(e){
+      rowEl&&rowEl.classList.remove("saving");
+      const hint=/unknown action/i.test(e.message)
+        ? " — the Google script needs its one-click update (Deploy → Manage deployments → New version)." : "";
+      toast("✗ Not undone: "+e.message+hint,"bad");
     }
   }
 
@@ -432,8 +475,8 @@ async function onAction(btn){
         await postWB({action:"tick_report",task_id:id,report_link:link});
         t.report_status="done"; t.report_done_date=isoToday();
         if(link)t.report_link=link;
-        rememberPending(id,{action_done_date:t.action_done_date,
-                            report_done_date:t.report_done_date,report_link:link});
+        setPending(id,{action_done_date:t.action_done_date,
+                       report_done_date:t.report_done_date,report_link:link});
         toast("✓ Report recorded — reminders for this task stop now.","ok"); render();
       }catch(e){ rowEl&&rowEl.classList.remove("saving"); toast("✗ Not saved: "+e.message,"bad"); }
     };
@@ -455,7 +498,7 @@ async function onAction(btn){
         if(!t.rescheduled_from)t.rescheduled_from=t.due_date;
         t.due_date=nd;t.reschedule_reason=rs;
         RESCHED[id]=j.reschedule_count||((RESCHED[id]||0)+1);
-        rememberPending(id,{due_date:nd,reason:rs});
+        setPending(id,{due_date:nd,reason:rs});
         toast("✓ Rescheduled to "+fmtLong(nd)+" — original date kept in the audit log."+
           (RESCHED[id]>=2?" ⚠ Now on the director watch list.":""),"ok");
         render();
@@ -499,6 +542,8 @@ async function load(){
   render();
 }
 document.getElementById("refreshbtn").onclick=load;
+document.getElementById("search").addEventListener("input",e=>{
+  SEARCH=e.target.value.trim().toLowerCase(); render();});
 // first visit: open on the worst department
 (function(){ activeDept="__pick__"; })();
 load();
