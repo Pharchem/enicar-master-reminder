@@ -289,7 +289,7 @@ def compute_touches_for_row(row: dict, today: date, nag_n: int) -> list[Touch]:
 # --------------------------------------------------------------------------- #
 # Baseline sweep (one-time)
 # --------------------------------------------------------------------------- #
-def baseline_touches(rows: list[dict], seen: set) -> list[Touch]:
+def baseline_touches(rows: list[dict], seen: set, cadence_start: date) -> list[Touch]:
     """One consolidated email per department listing all open tasks. Keyed
     BASELINE-<dept> in the sent-log so it can only ever fire once."""
     out = []
@@ -314,7 +314,7 @@ def baseline_touches(rows: list[dict], seen: set) -> list[Touch]:
             f"dashboard and tick 'action completed' (and 'report completed' where the report "
             f"is filed) for everything already done, so reminders start from a clean state.\n\n"
             f"Anything left unticked will enter the reminder and escalation cadence from "
-            f"2026-07-20.\n\n"
+            f"{cadence_start.isoformat()}.\n\n"
             + "\n".join(lines)
             + "\n\nThis is a one-time baseline message.\n")
         out.append(Touch(key_id, "baseline", False,
@@ -448,7 +448,7 @@ def run(as_of: date | None = None, dry_run: bool | None = None,
 
     touches: list[Touch] = []
     if cfg.get("baseline_sweep_enabled", True):
-        touches.extend(baseline_touches(rows, seen))
+        touches.extend(baseline_touches(rows, seen, cadence_start))
     if today >= cadence_start:
         for row in rows:
             touches.extend(compute_touches_for_row(row, today, nag_n))

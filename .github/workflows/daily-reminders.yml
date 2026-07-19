@@ -33,8 +33,9 @@ jobs:
 
       - name: Run reminder engine
         env:
-          # DRY_RUN defaults to true. Flip the repo/workflow to "false" to go live.
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'true' }}
+          # LIVE since 2026-07-19 (director sign-off after pre-flight). Scheduled runs
+          # send for real; a manual run can still pass dry_run=true to test safely.
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
           MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
           MAIL_APP_PASSWORD: ${{ secrets.MAIL_APP_PASSWORD }}
         run: python engine/reminder_engine.py

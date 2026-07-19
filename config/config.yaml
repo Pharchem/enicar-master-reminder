@@ -33,7 +33,8 @@ admin_cc:
   - "nimishpatil@enicarpharma.com"
 
 # ---- Cadence ----------------------------------------------------------------
-cadence_start_date: "2026-07-20"    # normal cadence begins here
+cadence_start_date: "2026-07-27"    # normal cadence begins here (grace week after the
+                                    # 2026-07-19 baseline sweep for teams to tick history)
 # One-time baseline sweep: one consolidated email per department listing all open
 # tasks, asking teams to confirm on the dashboard what is already complete.
 # Sent once (recorded in the sent-log); intended to run before cadence_start_date.
