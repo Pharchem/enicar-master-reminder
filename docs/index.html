@@ -6,99 +6,140 @@
 <title>Enicar — Master Reminder Dashboard</title>
 <style>
   :root{
-    --bg:#0f1720; --card:#17212e; --ink:#e8eef5; --muted:#9fb0c3; --line:#26374a;
-    --red:#e5484d; --red-bg:#3a1518; --amber:#f5a524; --amber-bg:#3a2c12;
-    --green:#30a46c; --green-bg:#13291f; --blue:#4f8ff7; --chip:#22303f;
+    --bg:#0e1520; --card:#161f2c; --card2:#1b2635; --ink:#e9eff6; --muted:#9db0c5;
+    --line:#263a52; --red:#ff6369; --red-bg:#3c161a; --amber:#f5a524; --amber-bg:#3a2c10;
+    --green:#3dd68c; --green-bg:#11291d; --blue:#5c9dff; --blue-bg:#152840; --chip:#223349;
+    --shadow:0 1px 8px rgba(0,0,0,.35);
   }
   @media (prefers-color-scheme: light){
-    :root{--bg:#f4f7fb;--card:#fff;--ink:#16212e;--muted:#5a6b7d;--line:#e2e9f1;
-      --red:#d1373c;--red-bg:#fdecec;--amber:#b8790a;--amber-bg:#fdf3e0;
-      --green:#1f7a4d;--green-bg:#e7f6ee;--blue:#2f6fe0;--chip:#eef3f9;}
+    :root{--bg:#f2f5f9;--card:#fff;--card2:#f7fafd;--ink:#15202e;--muted:#5a6b7d;
+      --line:#dfe7f0;--red:#d1373c;--red-bg:#fdecec;--amber:#a76f08;--amber-bg:#fdf3dd;
+      --green:#177a4c;--green-bg:#e4f6ec;--blue:#2563eb;--blue-bg:#e8f0fe;--chip:#e9eff7;
+      --shadow:0 1px 6px rgba(30,50,80,.08);}
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);
     font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-  header{padding:16px 12px 4px}
-  h1{font-size:19px;margin:0 0 2px}
-  .sub{color:var(--muted);font-size:12.5px}
-  .wrap{max-width:1100px;margin:0 auto;padding:0 10px 60px}
-  .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin:12px 0}
-  .sumcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
-  .sumcard h3{margin:0 0 6px;font-size:14px;display:flex;justify-content:space-between}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 12px 70px}
+  header{padding:16px 0 6px}
+  .hrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  h1{font-size:19px;margin:0;flex:1 1 auto}
+  .sub{color:var(--muted);font-size:12.5px;margin-top:3px}
+  .refresh{border:1px solid var(--line);background:var(--card);color:var(--ink);
+    border-radius:999px;padding:6px 14px;font-size:13px;cursor:pointer}
+  .refresh:hover{border-color:var(--blue)}
+  .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:12px 0}
+  .sumcard{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:12px 14px;cursor:pointer;box-shadow:var(--shadow);transition:border-color .15s}
+  .sumcard:hover{border-color:var(--blue)}
+  .sumcard.active{border-color:var(--blue);outline:2px solid var(--blue-bg)}
+  .sumcard h3{margin:0 0 8px;font-size:14.5px;display:flex;justify-content:space-between}
   .sumcard .tot{font-size:11px;color:var(--muted);font-weight:400}
-  .metric{display:flex;gap:12px;flex-wrap:wrap}
-  .metric div{font-size:12px}
-  .metric b{font-size:18px;display:block}
+  .metric{display:flex;gap:14px}
+  .metric div{font-size:11.5px;color:var(--muted)}
+  .metric b{font-size:19px;display:block;font-variant-numeric:tabular-nums}
   .m-red b{color:var(--red)} .m-amber b{color:var(--amber)} .m-blue b{color:var(--blue)}
-  .watch{background:var(--card);border:1px solid var(--amber);border-radius:12px;
-    padding:10px 12px;margin:10px 0;font-size:13px}
+  .watch{background:var(--card);border:1px solid var(--amber);border-radius:14px;
+    padding:11px 14px;margin:10px 0;font-size:13px;box-shadow:var(--shadow)}
   .watch h3{margin:0 0 6px;font-size:13.5px;color:var(--amber)}
-  .watch div{padding:2px 0}
-  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px;position:sticky;top:0;
-    background:var(--bg);padding:8px 0;z-index:5}
-  .tab{background:var(--chip);border:1px solid var(--line);color:var(--ink);
-    padding:7px 13px;border-radius:999px;cursor:pointer;font-size:14px}
-  .tab.active{background:var(--blue);border-color:var(--blue);color:#fff}
-  .tab .n{opacity:.7;font-size:12px;margin-left:4px}
-  section.bucket{background:var(--card);border:1px solid var(--line);border-radius:12px;
-    margin:10px 0;overflow:hidden}
-  .bhead{padding:10px 13px;font-weight:600;font-size:14px;cursor:pointer;
-    display:flex;justify-content:space-between;user-select:none}
+  .filters{display:flex;gap:7px;flex-wrap:wrap;position:sticky;top:0;z-index:6;
+    background:var(--bg);padding:10px 0 8px;margin-top:4px}
+  .fchip{border:1px solid var(--line);background:var(--card);color:var(--ink);
+    border-radius:999px;padding:6px 13px;font-size:13px;cursor:pointer;user-select:none}
+  .fchip .n{opacity:.65;font-size:11.5px;margin-left:4px;font-variant-numeric:tabular-nums}
+  .fchip.active{background:var(--blue);border-color:var(--blue);color:#fff}
+  .fchip.f-red.active{background:var(--red);border-color:var(--red)}
+  .fchip.f-amber.active{background:var(--amber);border-color:var(--amber);color:#221a00}
+  .fchip.f-green.active{background:var(--green);border-color:var(--green);color:#03210f}
+  section.bucket{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    margin:12px 0;overflow:hidden;box-shadow:var(--shadow)}
+  .bhead{padding:11px 14px;font-weight:650;font-size:14px;cursor:pointer;
+    display:flex;justify-content:space-between;align-items:center;user-select:none}
+  .bhead .count{font-variant-numeric:tabular-nums}
+  .bhead .chev{font-size:11px;opacity:.6;margin-left:8px}
   .b-red .bhead{background:var(--red-bg);color:var(--red)}
   .b-amber .bhead{background:var(--amber-bg);color:var(--amber)}
   .b-green .bhead{background:var(--green-bg);color:var(--green)}
-  .task{border-top:1px solid var(--line);padding:9px 13px;display:flex;
-    flex-wrap:wrap;gap:6px 12px;align-items:center}
-  .task .info{flex:1 1 260px;min-width:220px}
-  .task .name{font-weight:600;font-size:13.5px}
-  .task .meta{color:var(--muted);font-size:12px;margin-top:1px}
-  .task .od{color:var(--red);font-weight:700}
-  .task .rp{color:var(--amber);font-weight:600}
-  .pill{display:inline-block;font-size:10.5px;padding:1px 7px;border-radius:999px;
-    background:var(--chip);color:var(--muted);margin-left:5px;vertical-align:1px}
+  .b-blue .bhead{background:var(--blue-bg);color:var(--blue)}
+  .task{border-top:1px solid var(--line);padding:10px 14px;display:grid;
+    grid-template-columns:64px 1fr auto;gap:12px;align-items:center}
+  .task:nth-child(even){background:var(--card2)}
+  .due-badge{text-align:center;border:1px solid var(--line);border-radius:10px;
+    padding:5px 2px;background:var(--card)}
+  .due-badge .cap{font-size:9px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+  .due-badge .day{font-size:19px;font-weight:750;line-height:1.15;font-variant-numeric:tabular-nums}
+  .due-badge .mon{font-size:11px;color:var(--muted)}
+  .due-badge.od{border-color:var(--red)} .due-badge.od .day{color:var(--red)}
+  .due-badge.soon{border-color:var(--amber)} .due-badge.soon .day{color:var(--amber)}
+  .due-badge.ok .day{color:var(--green)}
+  .info{min-width:0}
+  .name{font-weight:640;font-size:13.5px;overflow-wrap:anywhere}
+  .meta{color:var(--muted);font-size:12px;margin-top:2px;overflow-wrap:anywhere}
+  .odchip{display:inline-block;background:var(--red-bg);color:var(--red);font-weight:700;
+    font-size:11px;border-radius:999px;padding:1px 8px;margin-left:6px}
+  .rpchip{display:inline-block;background:var(--amber-bg);color:var(--amber);font-weight:600;
+    font-size:11px;border-radius:999px;padding:1px 8px;margin-left:6px}
+  .pill{display:inline-block;font-size:10.5px;padding:1px 8px;border-radius:999px;
+    background:var(--chip);color:var(--muted);margin-left:6px;vertical-align:1px}
   .pill.flag{background:var(--amber-bg);color:var(--amber);font-weight:700}
-  .btns{display:flex;gap:6px;flex-wrap:wrap}
-  button{border:1px solid var(--line);background:var(--chip);color:var(--ink);
-    border-radius:8px;padding:6px 10px;font-size:12.5px;cursor:pointer}
-  button.act{border-color:var(--green);color:var(--green)}
-  button.rep{border-color:var(--blue);color:var(--blue)}
-  button.rs{color:var(--muted)}
-  button:disabled{opacity:.45;cursor:default}
-  .done-note{font-size:12px;color:var(--green)}
-  .hf-note{padding:8px 13px;font-size:12px;color:var(--muted);border-top:1px solid var(--line)}
+  .btns{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+  button{border:1px solid var(--line);background:var(--card);color:var(--ink);
+    border-radius:9px;padding:7px 12px;font-size:12.5px;cursor:pointer;font-weight:600}
+  button.act{background:var(--green);border-color:var(--green);color:#04240f}
+  button.rep{background:var(--blue);border-color:var(--blue);color:#fff}
+  button.rs{color:var(--muted);font-weight:500}
+  button:disabled{opacity:.5;cursor:default}
+  .done-note{font-size:12px;color:var(--green);font-weight:600;white-space:nowrap}
+  .saving{opacity:.6;pointer-events:none}
+  .hf-note{padding:9px 14px;font-size:12px;color:var(--muted);border-top:1px solid var(--line)}
   .hf-toggle{color:var(--blue);cursor:pointer;text-decoration:underline}
   .collapsed .bbody{display:none}
-  .loading,.err{padding:30px 13px;color:var(--muted)}
+  .collapsed .chev{transform:rotate(-90deg);display:inline-block}
+  .loading,.err,.empty{padding:34px 14px;color:var(--muted);text-align:center}
   .err{color:var(--red)}
-  footer{color:var(--muted);font-size:12px;text-align:center;padding:18px}
+  footer{color:var(--muted);font-size:12px;text-align:center;padding:22px 10px;line-height:1.6}
   dialog{background:var(--card);color:var(--ink);border:1px solid var(--line);
-    border-radius:12px;max-width:420px;width:92vw;padding:16px}
+    border-radius:14px;max-width:430px;width:92vw;padding:18px}
   dialog::backdrop{background:rgba(0,0,0,.55)}
   dialog h3{margin:0 0 10px;font-size:15px}
-  dialog label{display:block;font-size:12.5px;color:var(--muted);margin:10px 0 3px}
+  dialog label{display:block;font-size:12.5px;color:var(--muted);margin:10px 0 4px}
   dialog input,dialog textarea{width:100%;background:var(--bg);color:var(--ink);
-    border:1px solid var(--line);border-radius:8px;padding:8px;font-size:14px}
-  dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
-  .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
-    background:var(--card);border:1px solid var(--line);border-radius:10px;
-    padding:10px 16px;font-size:13.5px;z-index:50;box-shadow:0 4px 24px rgba(0,0,0,.4)}
+    border:1px solid var(--line);border-radius:9px;padding:9px;font-size:14px}
+  dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:15px}
+  .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);max-width:92vw;
+    background:var(--card);border:1px solid var(--line);border-radius:11px;
+    padding:11px 18px;font-size:13.5px;z-index:60;box-shadow:0 6px 30px rgba(0,0,0,.45)}
+  .toast.ok{border-color:var(--green)} .toast.bad{border-color:var(--red)}
+  @media (max-width:560px){
+    .task{grid-template-columns:56px 1fr;padding:10px 10px}
+    .btns{grid-column:1 / -1;justify-content:flex-start}
+    .due-badge .day{font-size:17px}
+  }
 </style>
 </head>
 <body>
-<header>
-  <div class="wrap" style="padding-bottom:0">
-    <h1>Enicar — Master Reminder Dashboard</h1>
-    <div class="sub">Tick tasks done, or reschedule with a reason — every change is
-      audit-logged. <span id="asof"></span> <span id="src"></span></div>
-  </div>
-</header>
 <div class="wrap">
+  <header>
+    <div class="hrow">
+      <div>
+        <h1>Enicar — Master Reminder Dashboard</h1>
+        <div class="sub">Tick tasks done or reschedule with a reason — every change is
+          audit-logged with an IST timestamp. <span id="src"></span></div>
+      </div>
+      <button class="refresh" id="refreshbtn">↻ Refresh</button>
+    </div>
+  </header>
+
   <div id="summary" class="summary"></div>
   <div id="watch"></div>
-  <div id="tabs" class="tabs"></div>
+  <div id="filters" class="filters"></div>
   <div id="board"><div class="loading">Loading tasks…</div></div>
-  <footer>No login — actions are recorded with an IST timestamp in the immutable audit log.
-    Emails stop for a task the moment its report is ticked complete.</footer>
+
+  <footer>
+    Changes save to the Google Sheet instantly and are confirmed with a green message.<br>
+    The dashboard's own view of the Sheet refreshes every few minutes — your ticks stay
+    visible here in the meantime. Emails for a task stop once its report is ticked.
+  </footer>
 </div>
 
 <dialog id="rsdlg">
@@ -106,7 +147,7 @@
   <div id="rstask" style="font-size:13px"></div>
   <label>New due date</label>
   <input type="date" id="rsdate">
-  <label>Reason (required — goes to the audit log)</label>
+  <label>Reason (required — recorded in the audit log)</label>
   <textarea id="rsreason" rows="2" placeholder="e.g. Vendor visit moved to next week"></textarea>
   <div class="row">
     <button onclick="document.getElementById('rsdlg').close()">Cancel</button>
@@ -125,7 +166,7 @@
   </div>
 </dialog>
 
-<script src="config.js"></script>
+<script src="config.js?v=3"></script>
 <script>
 const CFG = window.ENICAR_CONFIG || {};
 const DEPTS = ["QA","QC","Micro","Engineering"];
@@ -133,19 +174,19 @@ const ph = s => !s || s.indexOf("PASTE_") >= 0;
 const SHEET_URL = ph(CFG.SHEET_CSV_URL) ? CFG.SNAPSHOT_CSV : CFG.SHEET_CSV_URL;
 const AUDIT_URL = ph(CFG.AUDIT_CSV_URL) ? CFG.LOCAL_AUDIT : CFG.AUDIT_CSV_URL;
 const WB_URL    = ph(CFG.WRITEBACK_URL) ? CFG.LOCAL_WRITEBACK : CFG.WRITEBACK_URL;
-const WB_LOCAL  = ph(CFG.WRITEBACK_URL);   // local mock returns readable JSON
 
 const qp = new URLSearchParams(location.search);
 const TODAY = qp.get("today") ? new Date(qp.get("today")+"T00:00:00") : new Date();
 TODAY.setHours(0,0,0,0);
-document.getElementById("asof").textContent = "As of "+TODAY.toLocaleDateString("en-GB",
-  {day:"2-digit",month:"short",year:"numeric"})+".";
 
 function parseISO(s){ const m=/^(\d{4})-(\d{2})-(\d{2})/.exec((s||"").trim());
   if(!m) return null; const d=new Date(+m[1],+m[2]-1,+m[3]); d.setHours(0,0,0,0); return d; }
+function isoToday(){ return new Date().toISOString().slice(0,10); }
 function eom(d){const e=new Date(d.getFullYear(),d.getMonth()+1,0);e.setHours(0,0,0,0);return e;}
 function days(a,b){return Math.round((a-b)/86400000);}
 function esc(s){return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function fmtLong(s){const d=parseISO(s);return d?`${String(d.getDate()).padStart(2,"0")} ${MON[d.getMonth()]} ${d.getFullYear()}`:s;}
 
 function parseCSV(text){
   const rows=[]; let row=[], cur="", q=false;
@@ -159,15 +200,38 @@ function parseCSV(text){
   return rows.filter(r=>r.length>1).map(r=>{const o={};head.forEach((h,i)=>o[h]=(r[i]||"").trim());return o;});
 }
 
-const isHF   = t => (t.remarks||"").startsWith("HIGH_FREQ");
-const aDone  = t => (t.action_status||"").toLowerCase()==="done";
-const rDone  = t => (t.report_status||"").toLowerCase()==="done";
+const isHF  = t => (t.remarks||"").startsWith("HIGH_FREQ");
+const aDone = t => (t.action_status||"").toLowerCase()==="done";
+const rDone = t => (t.report_status||"").toLowerCase()==="done";
 
+/* ---------- pending-overlay: keep ticks visible during the Sheet's publish lag ------- */
+const OVERLAY_KEY="enicar_pending_v1", OVERLAY_TTL=30*60*1000;
+function loadOverlay(){ try{return JSON.parse(localStorage.getItem(OVERLAY_KEY)||"{}");}catch(e){return {};} }
+function saveOverlay(o){ try{localStorage.setItem(OVERLAY_KEY,JSON.stringify(o));}catch(e){} }
+function rememberPending(id,patch){ const o=loadOverlay(); o[id]={...(o[id]||{}),...patch,ts:Date.now()}; saveOverlay(o); }
+function applyOverlay(data){
+  const o=loadOverlay(); let changed=false;
+  for(const [id,p] of Object.entries(o)){
+    const t=data.find(x=>x.task_id===id);
+    const fresh=Date.now()-(p.ts||0) < OVERLAY_TTL;
+    if(!t || !fresh){ delete o[id]; changed=true; continue; }
+    let sheetCaughtUp=true;
+    if(p.action_done_date && !aDone(t)){ t.action_status="done"; t.action_done_date=p.action_done_date; sheetCaughtUp=false; }
+    if(p.report_done_date && !rDone(t)){ t.report_status="done"; t.report_done_date=p.report_done_date;
+      if(p.report_link) t.report_link=p.report_link; sheetCaughtUp=false; }
+    if(p.due_date && t.due_date!==p.due_date){ if(!t.rescheduled_from) t.rescheduled_from=t.due_date;
+      t.due_date=p.due_date; t.reschedule_reason=p.reason||t.reschedule_reason; sheetCaughtUp=false; }
+    if(sheetCaughtUp){ delete o[id]; changed=true; }
+  }
+  if(changed) saveOverlay(o);
+}
+
+/* ------------------------------- classification ------------------------------------- */
 function classify(t){
   if(rDone(t)) return {bucket:"completed"};
   const due=parseISO(t.due_date);
   if(!due) return {bucket:"upcoming"};
-  if(aDone(t)){                                   // report pending — clock is report_due
+  if(aDone(t)){
     const rdue=parseISO(t.report_due_date)||due;
     const od=days(TODAY,rdue);
     if(od>0) return {bucket:"overdue",overdueDays:od,report:true};
@@ -184,195 +248,237 @@ function classify(t){
 }
 
 const BUCKETS=[
-  {key:"overdue", label:"Overdue", cls:"b-red"},
-  {key:"week",    label:"Due this week / report pending", cls:"b-amber"},
-  {key:"month",   label:"Due this month", cls:"b-amber"},
-  {key:"upcoming",label:"Upcoming (90 days)", cls:"b-blue"},
-  {key:"later",   label:"Later", cls:"b-blue"},
-  {key:"completed",label:"Completed", cls:"b-green"},
+  {key:"overdue",  label:"Overdue",            cls:"b-red",   chip:"f-red"},
+  {key:"week",     label:"Due this week",       cls:"b-amber", chip:"f-amber"},
+  {key:"month",    label:"Due this month",      cls:"b-amber", chip:"f-amber"},
+  {key:"upcoming", label:"Upcoming (90 days)",  cls:"b-blue",  chip:""},
+  {key:"later",    label:"Later",               cls:"b-blue",  chip:""},
+  {key:"completed",label:"Completed",           cls:"b-green", chip:"f-green"},
 ];
 
-let DATA=[], RESCHED={}, activeDept="QA", showHF={};
+let DATA=[], RESCHED={}, activeDept="QA", activeFilter="all", showHF={};
 
-function watchList(){
-  const flagged=Object.entries(RESCHED).filter(([,n])=>n>=2);
-  const el=document.getElementById("watch");
-  if(!flagged.length){el.innerHTML="";return;}
-  const byId=Object.fromEntries(DATA.map(t=>[t.task_id,t]));
-  el.innerHTML=`<div class="watch"><h3>⚠ Rescheduled 2+ times — needs your attention</h3>`+
-    flagged.map(([id,n])=>{
-      const t=byId[id]||{};
-      return `<div><b>${esc(t.task_name||id)}</b> (${esc(t.department||"?")}, ${esc(id)}) — `+
-        `rescheduled ${n}× · now due ${esc(t.due_date||"?")} · originally ${esc(t.rescheduled_from||"?")}`+
-        (t.reschedule_reason?` · latest reason: “${esc(t.reschedule_reason)}”`:"")+`</div>`;
-    }).join("")+`</div>`;
-}
-
+/* ---------------------------------- rendering --------------------------------------- */
 function render(){
   const sum=document.getElementById("summary");
   const stats=DEPTS.map(dep=>{
     const rows=DATA.filter(t=>t.department===dep);
-    let overdue=0,month=0,rp=0;
+    let overdue=0,soon=0,rp=0;
     rows.forEach(t=>{const c=classify(t);
       if(c.bucket==="overdue")overdue++;
-      if(c.bucket==="month"||c.bucket==="week")month++;
+      if(c.bucket==="month"||c.bucket==="week")soon++;
       if(aDone(t)&&!rDone(t))rp++;});
-    return {dep,overdue,month,rp,total:rows.length};
+    return {dep,overdue,soon,rp,total:rows.length};
   }).sort((a,b)=>b.overdue-a.overdue);
   sum.innerHTML=stats.map(s=>`
-    <div class="sumcard"><h3>${s.dep}<span class="tot">${s.total} tasks</span></h3>
+    <div class="sumcard ${s.dep===activeDept?'active':''}" data-dep="${s.dep}">
+      <h3>${s.dep}<span class="tot">${s.total} tasks</span></h3>
       <div class="metric">
         <div class="m-red"><b>${s.overdue}</b>overdue</div>
-        <div class="m-amber"><b>${s.month}</b>due soon</div>
+        <div class="m-amber"><b>${s.soon}</b>due soon</div>
         <div class="m-blue"><b>${s.rp}</b>report pending</div>
       </div></div>`).join("");
-  watchList();
+  sum.querySelectorAll(".sumcard").forEach(el=>el.onclick=()=>{activeDept=el.dataset.dep;render();});
 
-  const tabs=document.getElementById("tabs");
-  tabs.innerHTML=DEPTS.map(dep=>{
-    const n=DATA.filter(t=>t.department===dep).length;
-    return `<div class="tab ${dep===activeDept?'active':''}" data-dep="${dep}">${dep}<span class="n">${n}</span></div>`;
-  }).join("");
-  tabs.querySelectorAll(".tab").forEach(el=>el.onclick=()=>{activeDept=el.dataset.dep;render();});
+  const flagged=Object.entries(RESCHED).filter(([,n])=>n>=2);
+  const watch=document.getElementById("watch");
+  if(flagged.length){
+    const byId=Object.fromEntries(DATA.map(t=>[t.task_id,t]));
+    watch.innerHTML=`<div class="watch"><h3>⚠ Rescheduled 2+ times — needs your attention</h3>`+
+      flagged.map(([id,n])=>{const t=byId[id]||{};
+        return `<div><b>${esc(t.task_name||id)}</b> (${esc(t.department||"?")}) — rescheduled ${n}×
+          · now due ${esc(fmtLong(t.due_date||""))} · originally ${esc(fmtLong(t.rescheduled_from||""))}
+          ${t.reschedule_reason?`· latest reason: “${esc(t.reschedule_reason)}”`:""}</div>`;}).join("")
+      +`</div>`;
+  } else watch.innerHTML="";
 
   const rows=DATA.filter(t=>t.department===activeDept);
   const byBucket={}; BUCKETS.forEach(b=>byBucket[b.key]=[]);
   rows.forEach(t=>{const c=classify(t);t._c=c;byBucket[c.bucket].push(t);});
+
+  const fl=document.getElementById("filters");
+  fl.innerHTML=`<div class="fchip ${activeFilter==="all"?"active":""}" data-f="all">All<span class="n">${rows.length}</span></div>`+
+    BUCKETS.map(b=>`<div class="fchip ${b.chip} ${activeFilter===b.key?"active":""}" data-f="${b.key}">
+      ${b.label}<span class="n">${byBucket[b.key].length}</span></div>`).join("");
+  fl.querySelectorAll(".fchip").forEach(el=>el.onclick=()=>{activeFilter=el.dataset.f;render();});
+
   let html="";
   for(const b of BUCKETS){
+    if(activeFilter!=="all" && activeFilter!==b.key) continue;
     const items=byBucket[b.key];
     if(!items.length) continue;
     const hf=items.filter(isHF), norm=items.filter(t=>!isHF(t));
     norm.sort((x,y)=>(parseISO(x.due_date)-parseISO(y.due_date))||0);
-    const collapsed=(b.key==="later"||b.key==="completed")?"collapsed":"";
+    const collapsed=(activeFilter==="all" && (b.key==="later"||b.key==="completed"||b.key==="upcoming"))?"collapsed":"";
     html+=`<section class="bucket ${b.cls} ${collapsed}">
-      <div class="bhead">${b.label}<span>${items.length}</span></div><div class="bbody">`;
+      <div class="bhead">${b.label}<span class="count">${items.length}<span class="chev">▾</span></span></div>
+      <div class="bbody">`;
     html+=norm.map(t=>taskRow(t,b.key)).join("");
     if(hf.length){
       const key=activeDept+b.key;
-      if(showHF[key]){ hf.sort((x,y)=>(parseISO(x.due_date)-parseISO(y.due_date))||0);
+      if(showHF[key]){
+        hf.sort((x,y)=>(parseISO(x.due_date)-parseISO(y.due_date))||0);
         html+=hf.map(t=>taskRow(t,b.key)).join("");
-        html+=`<div class="hf-note"><span class="hf-toggle" data-hf="${key}">Hide high-frequency rounds</span></div>`;
+        html+=`<div class="hf-note"><span class="hf-toggle" data-hf="${key}">Hide routine EM rounds</span></div>`;
       } else {
         const groups={};
         hf.forEach(t=>{const k=t.planner_type;groups[k]=(groups[k]||0)+1;});
         const g=Object.entries(groups).map(([k,n])=>`${esc(k)}: ${n}`).join(" · ");
-        html+=`<div class="hf-note">High-frequency rounds grouped (${g}) — `+
-          `<span class="hf-toggle" data-hf="${key}">show individually</span></div>`;
+        html+=`<div class="hf-note">Routine EM rounds grouped (${g}) —
+          <span class="hf-toggle" data-hf="${key}">show individually</span></div>`;
       }
     }
     html+=`</div></section>`;
   }
   const board=document.getElementById("board");
-  board.innerHTML=html||`<div class="loading">No tasks for ${activeDept}.</div>`;
+  board.innerHTML=html||`<div class="empty">Nothing here for ${activeDept} 🎉</div>`;
   board.querySelectorAll(".bhead").forEach(h=>h.onclick=()=>h.parentElement.classList.toggle("collapsed"));
   board.querySelectorAll(".hf-toggle").forEach(el=>el.onclick=()=>{showHF[el.dataset.hf]=!showHF[el.dataset.hf];render();});
   board.querySelectorAll("button[data-act]").forEach(btn=>btn.onclick=()=>onAction(btn));
 }
 
-function taskRow(t,bucket){
-  const c=t._c||{}, id=esc(t.task_id);
-  const overdue=bucket==="overdue"?` <span class="od">(${c.overdueDays}d ${c.report?"report ":""}overdue)</span>`:"";
-  const rp=aDone(t)&&!rDone(t)?` <span class="rp">report pending — due ${esc(t.report_due_date)}</span>`:"";
-  const rsN=RESCHED[t.task_id]||0;
-  const flags=(rsN?`<span class="pill ${rsN>=2?'flag':''}">rescheduled ${rsN}×</span>`:"")+
-    (t.due_type==="month_window"?`<span class="pill">month window</span>`:"");
-  let controls;
-  if(rDone(t)){
-    controls=`<span class="done-note">✔ Completed ${esc(t.report_done_date||t.action_done_date||"")}</span>`;
-  } else {
-    controls=
-      (aDone(t)?`<span class="done-note">✔ action ${esc(t.action_done_date)}</span>`
-               :`<button class="act" data-act="tick_action" data-id="${id}">✓ Action done</button>`)+
-      `<button class="rep" data-act="tick_report" data-id="${id}">✓ Report done</button>`+
-      `<button class="rs" data-act="reschedule" data-id="${id}" data-due="${esc(t.due_date)}"
-        data-name="${esc(t.task_name)}">↦ Reschedule…</button>`;
-  }
-  return `<div class="task"><div class="info">
-      <div class="name">${esc(t.task_name)}${flags}</div>
-      <div class="meta">${esc(t.equipment_or_item_id)} · ${esc((t.activity_type||"").replace(/_/g," "))}
-        · due ${esc(t.due_date)}${overdue}${rp}</div>
-    </div><div class="btns">${controls}</div></div>`;
+function dueBadge(t,bucket){
+  const d=parseISO(t.due_date);
+  if(!d) return `<div class="due-badge"><div class="cap">Due</div><div class="day">—</div></div>`;
+  const cls=bucket==="overdue"?"od":(bucket==="week"||bucket==="month")?"soon":(bucket==="completed"?"ok":"");
+  return `<div class="due-badge ${cls}">
+    <div class="cap">Due</div>
+    <div class="day">${String(d.getDate()).padStart(2,"0")}</div>
+    <div class="mon">${MON[d.getMonth()]} ${String(d.getFullYear()).slice(2)}</div>
+  </div>`;
 }
 
+function taskRow(t,bucket){
+  const c=t._c||{}, id=esc(t.task_id);
+  const od=bucket==="overdue"?`<span class="odchip">${c.overdueDays}d ${c.report?"report ":""}overdue</span>`:"";
+  const rp=aDone(t)&&!rDone(t)?`<span class="rpchip">report due ${esc(fmtLong(t.report_due_date))}</span>`:"";
+  const rsN=RESCHED[t.task_id]||0;
+  const flags=(rsN?`<span class="pill ${rsN>=2?'flag':''}">rescheduled ${rsN}×</span>`:"")+
+    (t.due_type==="month_window"?`<span class="pill">any day that month</span>`:"")+
+    (t.rescheduled_from?`<span class="pill">was ${esc(fmtLong(t.rescheduled_from))}</span>`:"");
+  let controls;
+  if(rDone(t)){
+    controls=`<span class="done-note">✔ Completed ${esc(fmtLong(t.report_done_date||t.action_done_date||""))}</span>`;
+  } else {
+    controls=
+      (aDone(t)?`<span class="done-note">✔ done ${esc(fmtLong(t.action_done_date))}</span>`
+               :`<button class="act" data-act="tick_action" data-id="${id}">✓ Action done</button>`)+
+      `<button class="rep" data-act="tick_report" data-id="${id}">✓ Report done</button>`+
+      `<button class="rs" data-act="reschedule" data-id="${id}">↦ Reschedule</button>`;
+  }
+  return `<div class="task" id="row-${id}">
+    ${dueBadge(t,bucket)}
+    <div class="info">
+      <div class="name">${esc(t.task_name)}${od}${rp}</div>
+      <div class="meta">${esc(t.equipment_or_item_id)}${t.equipment_or_item_id?" · ":""}${esc((t.activity_type||"").replace(/_/g," "))}
+        · due ${esc(fmtLong(t.due_date))} · report by ${esc(fmtLong(t.report_due_date))}${flags}</div>
+    </div>
+    <div class="btns">${controls}</div></div>`;
+}
+
+/* ------------------------------- write-back ----------------------------------------- */
 let toastTimer;
-function toast(msg){
+function toast(msg,kind){
   document.querySelectorAll(".toast").forEach(e=>e.remove());
-  const el=document.createElement("div");el.className="toast";el.textContent=msg;
+  const el=document.createElement("div");el.className="toast "+(kind||"");el.textContent=msg;
   document.body.appendChild(el);
-  clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.remove(),3500);
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.remove(),4200);
 }
 
 async function postWB(params){
-  const body=new URLSearchParams(params);
-  if(WB_LOCAL){
-    const r=await fetch(WB_URL,{method:"POST",body});
-    const j=await r.json();
-    if(!j.ok&&!j.noop) throw new Error(j.error||"write failed");
-    return j;
-  }
-  // Deployed Apps Script: no-cors POST (opaque response — optimistic UI)
-  await fetch(WB_URL,{method:"POST",mode:"no-cors",body});
-  return {ok:true,opaque:true};
+  // Params travel in the query string (Apps Script exposes them via e.parameter) AND in
+  // the body (the local mock reads the body). text-free simple request = no preflight,
+  // and the JSON reply is readable, so every save is genuinely confirmed.
+  const qs=new URLSearchParams(params);
+  const r=await fetch(WB_URL+(WB_URL.includes("?")?"&":"?")+qs.toString(),
+    {method:"POST", body:qs});
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  let j;
+  try{ j=await r.json(); }catch(e){ throw new Error("unreadable reply from write-back"); }
+  if(!j.ok && !j.noop) throw new Error(j.error||"write failed");
+  return j;
 }
 
 async function onAction(btn){
   const act=btn.dataset.act, id=btn.dataset.id;
   const t=DATA.find(x=>x.task_id===id); if(!t) return;
+  const rowEl=document.getElementById("row-"+CSS.escape(id));
+
   if(act==="tick_action"){
-    btn.disabled=true;
-    try{ await postWB({action:"tick_action",task_id:id});
-      t.action_status="done";t.action_done_date=new Date().toISOString().slice(0,10);
-      toast("Action ticked — audit-logged.");render();
-    }catch(e){btn.disabled=false;toast("Failed: "+e.message);}
+    rowEl&&rowEl.classList.add("saving"); btn.disabled=true; btn.textContent="Saving…";
+    try{
+      await postWB({action:"tick_action",task_id:id});
+      t.action_status="done"; t.action_done_date=isoToday();
+      rememberPending(id,{action_done_date:t.action_done_date});
+      toast("✓ Saved to the Sheet and audit-logged.","ok"); render();
+    }catch(e){
+      rowEl&&rowEl.classList.remove("saving"); btn.disabled=false; btn.textContent="✓ Action done";
+      toast("✗ Not saved: "+e.message,"bad");
+    }
   }
+
   if(act==="tick_report"){
-    document.getElementById("rptask").textContent=t.task_name+" ("+id+")";
+    document.getElementById("rptask").textContent=t.task_name+" — due "+fmtLong(t.due_date);
+    document.getElementById("rplink").value="";
     const dlg=document.getElementById("rpdlg");dlg.showModal();
     document.getElementById("rpgo").onclick=async()=>{
       const link=document.getElementById("rplink").value.trim();
-      dlg.close();
-      try{ await postWB({action:"tick_report",task_id:id,report_link:link});
-        t.report_status="done";t.report_done_date=new Date().toISOString().slice(0,10);
+      dlg.close(); rowEl&&rowEl.classList.add("saving");
+      try{
+        if(!aDone(t)){                      // keep the Sheet consistent: action first
+          await postWB({action:"tick_action",task_id:id});
+          t.action_status="done"; t.action_done_date=isoToday();
+        }
+        await postWB({action:"tick_report",task_id:id,report_link:link});
+        t.report_status="done"; t.report_done_date=isoToday();
         if(link)t.report_link=link;
-        if(!aDone(t)){t.action_status="done";t.action_done_date=t.report_done_date;}
-        toast("Report ticked — emails for this task stop now.");render();
-      }catch(e){toast("Failed: "+e.message);}
+        rememberPending(id,{action_done_date:t.action_done_date,
+                            report_done_date:t.report_done_date,report_link:link});
+        toast("✓ Report recorded — reminders for this task stop now.","ok"); render();
+      }catch(e){ rowEl&&rowEl.classList.remove("saving"); toast("✗ Not saved: "+e.message,"bad"); }
     };
   }
+
   if(act==="reschedule"){
-    document.getElementById("rstask").textContent=t.task_name+" — currently due "+t.due_date;
+    document.getElementById("rstask").textContent=t.task_name+" — currently due "+fmtLong(t.due_date);
     const dlg=document.getElementById("rsdlg");
     document.getElementById("rsdate").value="";document.getElementById("rsreason").value="";
     dlg.showModal();
     document.getElementById("rsgo").onclick=async()=>{
       const nd=document.getElementById("rsdate").value,
             rs=document.getElementById("rsreason").value.trim();
-      if(!nd){toast("Pick a new due date.");return;}
-      if(!rs){toast("A reason is required — it goes to the audit log.");return;}
-      dlg.close();
-      try{ const j=await postWB({action:"reschedule",task_id:id,new_due_date:nd,reason:rs});
+      if(!nd){toast("Pick a new due date.","bad");return;}
+      if(!rs){toast("A reason is required — it goes to the audit log.","bad");return;}
+      dlg.close(); rowEl&&rowEl.classList.add("saving");
+      try{
+        const j=await postWB({action:"reschedule",task_id:id,new_due_date:nd,reason:rs});
         if(!t.rescheduled_from)t.rescheduled_from=t.due_date;
         t.due_date=nd;t.reschedule_reason=rs;
-        RESCHED[id]=(RESCHED[id]||0)+1;
-        toast("Rescheduled to "+nd+" — original date preserved in the audit log."+
-          (RESCHED[id]>=2?" ⚠ This task is now on the director watch list.":""));
+        RESCHED[id]=j.reschedule_count||((RESCHED[id]||0)+1);
+        rememberPending(id,{due_date:nd,reason:rs});
+        toast("✓ Rescheduled to "+fmtLong(nd)+" — original date kept in the audit log."+
+          (RESCHED[id]>=2?" ⚠ Now on the director watch list.":""),"ok");
         render();
-      }catch(e){toast("Failed: "+e.message);}
+      }catch(e){ rowEl&&rowEl.classList.remove("saving"); toast("✗ Not saved: "+e.message,"bad"); }
     };
   }
 }
 
+/* ---------------------------------- loading ----------------------------------------- */
 async function load(){
+  document.getElementById("board").innerHTML=`<div class="loading">Loading tasks…</div>`;
   try{
     const r=await fetch(SHEET_URL,{cache:"no-store"});
     if(!r.ok) throw new Error("HTTP "+r.status);
     DATA=parseCSV(await r.text());
+    const now=new Date();
     document.getElementById("src").textContent =
-      ph(CFG.SHEET_CSV_URL)?"· local test data":"· live Sheet";
+      (ph(CFG.SHEET_CSV_URL)?"Local test data":"Live Sheet")+
+      " · loaded "+now.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})+
+      " · "+`${String(TODAY.getDate()).padStart(2,"0")} ${MON[TODAY.getMonth()]} ${TODAY.getFullYear()}`;
   }catch(e){
     document.getElementById("board").innerHTML=
-      `<div class="err">Could not load task data (${esc(e.message)}).</div>`;
+      `<div class="err">Could not load task data (${esc(e.message)}). Check your connection and press Refresh.</div>`;
     return;
   }
   try{
@@ -383,12 +489,18 @@ async function load(){
       audit.filter(a=>a.action==="reschedule").forEach(a=>{
         RESCHED[a.task_id]=(RESCHED[a.task_id]||0)+1;});
     }
-  }catch(e){/* audit optional — watch list simply empty */}
-  const worst=DEPTS.map(d=>[d,DATA.filter(t=>t.department===d&&classify(t).bucket==="overdue").length])
-    .sort((a,b)=>b[1]-a[1])[0];
-  activeDept=worst?worst[0]:"QA";
+  }catch(e){/* audit optional */}
+  applyOverlay(DATA);
+  if(!DEPTS.includes(activeDept)||!DATA.some(t=>t.department===activeDept)){
+    const worst=DEPTS.map(d=>[d,DATA.filter(t=>t.department===d&&classify(t).bucket==="overdue").length])
+      .sort((a,b)=>b[1]-a[1])[0];
+    activeDept=worst?worst[0]:"QA";
+  }
   render();
 }
+document.getElementById("refreshbtn").onclick=load;
+// first visit: open on the worst department
+(function(){ activeDept="__pick__"; })();
 load();
 </script>
 </body>
