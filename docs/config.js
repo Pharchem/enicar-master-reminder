@@ -11,7 +11,7 @@
 window.ENICAR_CONFIG = {
   SHEET_CSV_URL: "https://docs.google.com/spreadsheets/d/e/2PACX-1vT3x9hcQTOl8tKtrzcS7tLas3u268_2lx1rwAhmpgjWHVbryTPSxxzOlljYRfLV5k6hS8KPDzlrmhcv/pub?gid=1690372004&single=true&output=csv",
   AUDIT_CSV_URL: "https://docs.google.com/spreadsheets/d/e/2PACX-1vT3x9hcQTOl8tKtrzcS7tLas3u268_2lx1rwAhmpgjWHVbryTPSxxzOlljYRfLV5k6hS8KPDzlrmhcv/pub?gid=243181721&single=true&output=csv",
-  WRITEBACK_URL: "PASTE_DEPLOYED_APPS_SCRIPT_WEBAPP_URL_HERE",
+  WRITEBACK_URL: "https://script.google.com/macros/s/AKfycbyzshZdG5MTrLNXyLRbQ0KmZZnCVzblMF4xyV6yvQW9Gk-cj1OJkVcov3RZkPoNZ8yhuA/exec",
   SNAPSHOT_CSV: "MASTER_consolidated.csv",
   LOCAL_AUDIT: "/audit.csv",
   LOCAL_WRITEBACK: "/writeback",

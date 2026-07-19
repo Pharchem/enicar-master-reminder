@@ -59,4 +59,4 @@ batch_by_department: true
 # ---- Write-back (Apps Script web app) ----------------------------------------
 # Deployed web-app URL (SETUP.md step 3). The dashboard posts ticks/reschedules here.
 # The engine itself never writes to the Sheet — only the Apps Script does.
-apps_script_url: "PASTE_DEPLOYED_APPS_SCRIPT_WEBAPP_URL_HERE"
+apps_script_url: "https://script.google.com/macros/s/AKfycbyzshZdG5MTrLNXyLRbQ0KmZZnCVzblMF4xyV6yvQW9Gk-cj1OJkVcov3RZkPoNZ8yhuA/exec"
