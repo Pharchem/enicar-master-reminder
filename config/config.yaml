@@ -14,7 +14,7 @@ local_fallback_csv: "data/sheets/MASTER_consolidated.csv"
 
 # ---- Identity / routing -----------------------------------------------------
 timezone: "Asia/Kolkata"            # all date math in IST
-director_email: "info@pharchem.in"  # FROM address on every email
+director_email: "nimishpatil@enicarpharma.com"  # FROM address on every email (must match MAIL_USERNAME account)
 
 department_emails:
   QA: "qa@enicarpharma.com"
