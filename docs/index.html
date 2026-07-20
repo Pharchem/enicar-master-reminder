@@ -95,6 +95,16 @@
   .search{border:1px solid var(--line);background:var(--card);color:var(--ink);
     border-radius:999px;padding:7px 14px;font-size:13.5px;min-width:210px;flex:0 1 260px}
   .search:focus{outline:none;border-color:var(--blue)}
+  .loginbar{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:8px;
+    flex-wrap:wrap;margin-top:8px;background:var(--card);border:1px solid var(--line);
+    border-radius:999px;padding:5px 12px;width:fit-content}
+  .loginbar.on{border-color:var(--green)}
+  .loginbar b{color:var(--ink)}
+  .linkbtn{background:none;border:none;color:var(--blue);cursor:pointer;font-size:12.5px;
+    padding:0;font-weight:600;text-decoration:underline}
+  dialog select{width:100%;background:var(--bg);color:var(--ink);
+    border:1px solid var(--line);border-radius:9px;padding:9px;font-size:14px}
+  .dsmall{font-size:12px;color:var(--muted);margin-top:2px}
   .saving{opacity:.6;pointer-events:none}
   .hf-note{padding:9px 14px;font-size:12px;color:var(--muted);border-top:1px solid var(--line)}
   .hf-toggle{color:var(--blue);cursor:pointer;text-decoration:underline}
@@ -134,6 +144,7 @@
       <input type="search" id="search" class="search" placeholder="🔍 Search task, ID, activity…">
       <button class="refresh" id="refreshbtn">↻ Refresh</button>
     </div>
+    <div id="loginbar" class="loginbar"></div>
   </header>
 
   <div id="summary" class="summary"></div>
@@ -147,6 +158,23 @@
     visible here in the meantime. Emails for a task stop once its report is ticked.
   </footer>
 </div>
+
+<dialog id="logindlg">
+  <h3>Sign in to update tasks</h3>
+  <div class="dsmall">Enter your department password and your name. You stay signed in on this
+    device until you sign out or close the tab, so you can tick several tasks in one go.
+    Your name is recorded in the audit log for every change.</div>
+  <label>Department</label>
+  <select id="lgdept"></select>
+  <label>Department password</label>
+  <input type="password" id="lgpwd" autocomplete="off">
+  <label>Your name / initials</label>
+  <input type="text" id="lgname" autocomplete="off" placeholder="e.g. R. Sharma">
+  <div class="row">
+    <button id="lgcancel">Cancel</button>
+    <button class="act" id="lggo">Sign in</button>
+  </div>
+</dialog>
 
 <dialog id="rsdlg">
   <h3>Reschedule task</h3>
@@ -172,7 +200,7 @@
   </div>
 </dialog>
 
-<script src="config.js?v=4"></script>
+<script src="config.js?v=5"></script>
 <script>
 const CFG = window.ENICAR_CONFIG || {};
 const DEPTS = ["QA","QC","Micro","Engineering"];
@@ -407,17 +435,98 @@ function toast(msg,kind){
   clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.remove(),4200);
 }
 
+const MUTATING=["tick_action","tick_report","untick_action","untick_report","reschedule"];
+const AUTH_MSG={login_required:"Please sign in first.",operator_required:"Enter your name.",
+  bad_login:"Unknown department.",bad_password:"Wrong password.",
+  wrong_department:"That password is for another department — sign in as the task's department.",
+  expired:"Session ended — please sign in again."};
+function authMsg(code){ return AUTH_MSG[code]||("Login problem ("+code+")."); }
+
+/* -------- department login session (attribution) -------- */
+function getSession(){ try{return JSON.parse(sessionStorage.getItem("enicar_login")||"null");}catch(e){return null;} }
+function setSession(s){ sessionStorage.setItem("enicar_login",JSON.stringify(s)); }
+function clearSession(){ sessionStorage.removeItem("enicar_login"); }
+
+function updateLoginBar(){
+  const s=getSession(), el=document.getElementById("loginbar");
+  if(s){
+    el.classList.add("on");
+    el.innerHTML=`🔓 Signed in: <b>${esc(s.operator)}</b> · ${esc(s.dept)}${s.admin?" (admin)":""}
+      <button class="linkbtn" id="signout">Sign out</button>`;
+    el.querySelector("#signout").onclick=()=>{clearSession();updateLoginBar();
+      toast("Signed out.","ok");render();};
+  } else {
+    el.classList.remove("on");
+    el.innerHTML=`🔒 Not signed in — you'll be asked for your department password when you tick a task
+      <button class="linkbtn" id="signin">Sign in now</button>`;
+    el.querySelector("#signin").onclick=()=>ensureLogin(activeDept).then(()=>render()).catch(()=>{});
+  }
+}
+
+async function verifyLogin(dept,pwd){
+  const qs=new URLSearchParams({action:"verify_pwd",dept_login:dept,pwd:pwd});
+  const r=await fetch(WB_URL+(WB_URL.includes("?")?"&":"?")+qs.toString(),{method:"POST",body:qs});
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  return await r.json();
+}
+
+// Resolve to a valid session for taskDept, opening the sign-in dialog if needed.
+function ensureLogin(taskDept){
+  return new Promise((resolve,reject)=>{
+    const s=getSession();
+    if(s && (s.admin || s.dept===taskDept)) return resolve(s);
+    const dlg=document.getElementById("logindlg");
+    const sel=document.getElementById("lgdept");
+    sel.innerHTML=DEPTS.map(d=>`<option value="${d}">${d}</option>`).join("");
+    sel.value=taskDept||activeDept;
+    document.getElementById("lgpwd").value="";
+    document.getElementById("lgname").value=localStorage.getItem("enicar_lastname")||"";
+    dlg.showModal();
+    setTimeout(()=>document.getElementById("lgpwd").focus(),50);
+    document.getElementById("lggo").onclick=async()=>{
+      const dept=sel.value, pwd=document.getElementById("lgpwd").value,
+            name=document.getElementById("lgname").value.trim();
+      if(!pwd){toast("Enter the department password.","bad");return;}
+      if(!name){toast("Enter your name / initials.","bad");return;}
+      try{
+        const j=await verifyLogin(dept,pwd);
+        if(!j.ok){toast("✗ "+authMsg(j.error),"bad");return;}
+        const sess={dept:dept,pwd:pwd,operator:name,admin:!!j.admin};
+        setSession(sess); localStorage.setItem("enicar_lastname",name);
+        dlg.close(); updateLoginBar();
+        if(taskDept && !sess.admin && sess.dept!==taskDept){
+          toast("Signed in as "+dept+", but this task belongs to "+taskDept+".","bad");
+          return reject("dept");
+        }
+        toast("✓ Signed in as "+name+" ("+dept+").","ok");
+        resolve(sess);
+      }catch(e){ toast("✗ "+e.message,"bad"); }
+    };
+    document.getElementById("lgcancel").onclick=()=>{dlg.close(); reject("cancel");};
+  });
+}
+
 async function postWB(params){
-  // Params travel in the query string (Apps Script exposes them via e.parameter) AND in
-  // the body (the local mock reads the body). text-free simple request = no preflight,
-  // and the JSON reply is readable, so every save is genuinely confirmed.
-  const qs=new URLSearchParams(params);
+  // Attach the signed-in department credentials to every mutating action.
+  const merged={...params};
+  if(MUTATING.includes(params.action)){
+    const s=getSession();
+    if(!s) throw new Error(authMsg("login_required"));
+    merged.dept_login=s.dept; merged.pwd=s.pwd; merged.operator=s.operator;
+  }
+  const qs=new URLSearchParams(merged);
   const r=await fetch(WB_URL+(WB_URL.includes("?")?"&":"?")+qs.toString(),
     {method:"POST", body:qs});
   if(!r.ok) throw new Error("HTTP "+r.status);
   let j;
   try{ j=await r.json(); }catch(e){ throw new Error("unreadable reply from write-back"); }
-  if(!j.ok && !j.noop) throw new Error(j.error||"write failed");
+  if(!j.ok && !j.noop){
+    if(String(j.error||"").startsWith("auth:")){
+      clearSession(); updateLoginBar();
+      throw new Error(authMsg(j.error.slice(5))+" (please sign in again)");
+    }
+    throw new Error(j.error||"write failed");
+  }
   return j;
 }
 
@@ -425,6 +534,9 @@ async function onAction(btn){
   const act=btn.dataset.act, id=btn.dataset.id;
   const t=DATA.find(x=>x.task_id===id); if(!t) return;
   const rowEl=document.getElementById("row-"+CSS.escape(id));
+  // require a valid department sign-in before any write
+  try{ await ensureLogin(t.department); }
+  catch(e){ if(e!=="cancel"&&e!=="dept") toast("Sign-in needed to update tasks.","bad"); return; }
 
   if(act==="tick_action"){
     rowEl&&rowEl.classList.add("saving"); btn.disabled=true; btn.textContent="Saving…";
@@ -534,6 +646,7 @@ async function load(){
     }
   }catch(e){/* audit optional */}
   applyOverlay(DATA);
+  updateLoginBar();
   if(!DEPTS.includes(activeDept)||!DATA.some(t=>t.department===activeDept)){
     const worst=DEPTS.map(d=>[d,DATA.filter(t=>t.department===d&&classify(t).bucket==="overdue").length])
       .sort((a,b)=>b[1]-a[1])[0];

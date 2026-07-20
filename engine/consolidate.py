@@ -17,7 +17,7 @@ SPEC = ["task_id","department","planner_type","task_name","equipment_or_item_id"
         "reschedule_reason","remarks","source_file"]
 DEPTS = ["QA","QC","Micro","Engineering"]
 AUDIT_HEADER = ["timestamp_ist","task_id","department","action","field",
-                "old_value","new_value","reason","source"]
+                "old_value","new_value","reason","source","operator"]
 
 
 def main():

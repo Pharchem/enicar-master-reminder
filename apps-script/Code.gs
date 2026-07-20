@@ -25,11 +25,55 @@
 var MASTER_TAB = 'MASTER';
 var AUDIT_TAB = 'AuditLog';
 var TZ = 'Asia/Kolkata';
+var DEPTS = ['QA', 'QC', 'Micro', 'Engineering'];
+
+// --- Department login (attribution) ---------------------------------------
+// Passwords are NOT in this code. Set them in Project Settings > Script
+// Properties as PWD_QA, PWD_QC, PWD_Micro, PWD_Engineering (and optionally
+// PWD_ADMIN, which may act on ANY department — for QA oversight / the Director).
+// See SETUP.md. A department's own password may only tick that department's
+// tasks; every tick/reschedule records the operator name in the audit log.
+function deptPwd_(dept) {
+  return String(PropertiesService.getScriptProperties().getProperty('PWD_' + dept) || '');
+}
+function adminPwd_() {
+  return String(PropertiesService.getScriptProperties().getProperty('PWD_ADMIN') || '');
+}
+// Lightweight check for the sign-in screen (no task involved).
+function verifyLogin_(p) {
+  var login = String(p.dept_login || '').trim();
+  var pwd = String(p.pwd || '');
+  if (!login || !pwd) return { ok: false, error: 'login_required' };
+  var admin = adminPwd_();
+  if (admin && pwd === admin) return { ok: true, admin: true, dept: login };
+  if (DEPTS.indexOf(login) < 0) return { ok: false, error: 'bad_login' };
+  var want = deptPwd_(login);
+  if (want === '' || pwd !== want) return { ok: false, error: 'bad_password' };
+  return { ok: true, dept: login };
+}
+// Full check for a mutating action on a task owned by taskDept.
+function checkAuth_(p, taskDept) {
+  var login = String(p.dept_login || '').trim();
+  var pwd = String(p.pwd || '');
+  var operator = String(p.operator || '').trim();
+  if (!login || !pwd) return { ok: false, error: 'login_required' };
+  if (!operator) return { ok: false, error: 'operator_required' };
+  var admin = adminPwd_();
+  if (admin && pwd === admin) return { ok: true, operator: operator, dept: login, admin: true };
+  if (DEPTS.indexOf(login) < 0) return { ok: false, error: 'bad_login' };
+  var want = deptPwd_(login);
+  if (want === '' || pwd !== want) return { ok: false, error: 'bad_password' };
+  if (taskDept && taskDept !== login) return { ok: false, error: 'wrong_department' };
+  return { ok: true, operator: operator, dept: login };
+}
 
 function doGet(e) {
   var p = (e && e.parameter) || {};
   if (p.action === 'health') {
     return json_({ ok: true, service: 'enicar-reminder-writeback', time_ist: nowIst_() });
+  }
+  if (p.action === 'verify_pwd') {
+    return json_(verifyLogin_(p));
   }
   return json_({ ok: false, error: 'POST tick_action / tick_report / reschedule; GET action=health' });
 }
@@ -40,6 +84,7 @@ function doPost(e) {
   try {
     var p = (e && e.parameter) || {};
     var action = String(p.action || '');
+    if (action === 'verify_pwd') return json_(verifyLogin_(p));
     var taskId = String(p.task_id || '').trim();
     if (!taskId) return json_({ ok: false, error: 'task_id required' });
 
@@ -67,6 +112,16 @@ function doPost(e) {
     var dept = String(row[col.department]);
     var today = todayIst_();
 
+    // --- department login gate for every mutating action ---
+    var MUTATING = { tick_action: 1, tick_report: 1, untick_action: 1,
+                     untick_report: 1, reschedule: 1 };
+    var operator = '';
+    if (MUTATING[action]) {
+      var auth = checkAuth_(p, dept);
+      if (!auth.ok) return json_({ ok: false, error: 'auth:' + auth.error });
+      operator = auth.operator;
+    }
+
     function setCell(field, value) {
       sheet.getRange(rowIdx + 1, col[field] + 1).setValue(value);
     }
@@ -78,7 +133,7 @@ function doPost(e) {
       setCell('action_done_date', today);
       setCell('action_status', 'done');
       audit_(ss, taskId, dept, 'tick_action', 'action_status',
-             String(row[col.action_status]), 'done', '', 'dashboard');
+             String(row[col.action_status]), 'done', '', 'dashboard', operator);
       return json_({ ok: true, task_id: taskId, action_done_date: today });
     }
 
@@ -91,7 +146,7 @@ function doPost(e) {
       setCell('report_status', 'done');
       if (link) setCell('report_link', link);
       audit_(ss, taskId, dept, 'tick_report', 'report_status',
-             String(row[col.report_status]), 'done' + (link ? ' (' + link + ')' : ''), '', 'dashboard');
+             String(row[col.report_status]), 'done' + (link ? ' (' + link + ')' : ''), '', 'dashboard', operator);
       return json_({ ok: true, task_id: taskId, report_done_date: today });
     }
 
@@ -106,7 +161,7 @@ function doPost(e) {
       setCell('action_done_date', '');
       setCell('action_status', 'pending');
       audit_(ss, taskId, dept, 'untick_action', 'action_status', 'done', 'pending',
-             uaReason, 'dashboard');
+             uaReason, 'dashboard', operator);
       return json_({ ok: true, task_id: taskId, action_status: 'pending' });
     }
 
@@ -119,7 +174,7 @@ function doPost(e) {
       setCell('report_status', 'pending');
       // report_link is left in place — it stays part of the record
       audit_(ss, taskId, dept, 'untick_report', 'report_status', 'done', 'pending',
-             urReason, 'dashboard');
+             urReason, 'dashboard', operator);
       return json_({ ok: true, task_id: taskId, report_status: 'pending' });
     }
 
@@ -137,13 +192,13 @@ function doPost(e) {
       setCell('due_date', newDue);
       setCell('reschedule_reason', reason);
       setCell('report_due_date', reportDue_(newDue, String(row[col.due_type])));
-      audit_(ss, taskId, dept, 'reschedule', 'due_date', oldDue, newDue, reason, 'dashboard');
+      audit_(ss, taskId, dept, 'reschedule', 'due_date', oldDue, newDue, reason, 'dashboard', operator);
       // repeated-push signal: count reschedules incl. this one; flag at 2+
       var count = rescheduleCount_(ss, taskId);
       if (count >= 2) {
         audit_(ss, taskId, dept, 'reschedule_flag', 'reschedule_count',
                String(count - 1), String(count),
-               'task rescheduled ' + count + ' times — director attention', 'system');
+               'task rescheduled ' + count + ' times — director attention', 'system', operator);
       }
       return json_({ ok: true, task_id: taskId, due_date: newDue, reschedule_count: count });
     }
@@ -156,14 +211,19 @@ function doPost(e) {
 
 /* ------------------------- helpers ------------------------- */
 
-function audit_(ss, taskId, dept, action, field, oldVal, newVal, reason, source) {
+function audit_(ss, taskId, dept, action, field, oldVal, newVal, reason, source, operator) {
+  var header = ['timestamp_ist', 'task_id', 'department', 'action', 'field',
+                'old_value', 'new_value', 'reason', 'source', 'operator'];
   var sheet = ss.getSheetByName(AUDIT_TAB);
   if (!sheet) {
     sheet = ss.insertSheet(AUDIT_TAB);
-    sheet.appendRow(['timestamp_ist', 'task_id', 'department', 'action', 'field',
-                     'old_value', 'new_value', 'reason', 'source']);
+    sheet.appendRow(header);
+  } else if (sheet.getLastColumn() < header.length) {
+    // extend an older 9-column AuditLog header to include 'operator'
+    sheet.getRange(1, header.length).setValue('operator');
   }
-  sheet.appendRow([nowIst_(), taskId, dept, action, field, oldVal, newVal, reason, source]);
+  sheet.appendRow([nowIst_(), taskId, dept, action, field, oldVal, newVal,
+                   reason, source, operator || '']);
 }
 
 function rescheduleCount_(ss, taskId) {

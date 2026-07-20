@@ -44,6 +44,31 @@ explicit `DRY_RUN=false`.**
 6. If you later edit Code.gs, use **Deploy → Manage deployments → Edit → New version**
    (a brand-new deployment changes the URL and you'd have to re-wire it).
 
+## 3b. Department passwords (who-did-what attribution)
+
+The dashboard requires a **department password + operator name** before anyone can tick
+or reschedule; the operator name is written to the audit log for every change. Passwords
+live in the Apps Script's private settings — never in the public page.
+
+1. In the Apps Script editor: **Project Settings** (gear icon) → **Script Properties** →
+   **Add script property**. Add one per department (choose your own passwords):
+   - `PWD_QA` = *(QA's password)*
+   - `PWD_QC` = *(QC's password)*
+   - `PWD_Micro` = *(Micro's password)*
+   - `PWD_Engineering` = *(Engineering's password)*
+   - *(optional)* `PWD_ADMIN` = *(a master password that can act on ANY department — for
+     QA oversight / the Director)*
+2. Save. Changes take effect immediately (no redeploy needed for property changes).
+3. A department's own password may only tick that department's tasks. Share each password
+   only with that team. Tell staff to enter **their own name/initials** at sign-in — that
+   is what makes the audit trail meaningful.
+
+Note: this is attribution-grade access control (a shared per-department password), not
+individual identity. It records who *says* they did each action and stops another
+department or a casual visitor from ticking tasks; it is not a substitute for named user
+accounts. The password itself is validated inside the Apps Script and is never exposed in
+the public dashboard code.
+
 ## 4. Gmail app password → GitHub repo secrets
 
 1. On the sending account (`info@pharchem.in`): enable 2-Step Verification, then create a

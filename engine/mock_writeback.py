@@ -26,7 +26,30 @@ MASTER = ROOT / "docs" / "MASTER_consolidated.csv"
 AUDIT = ROOT / "data" / "sheets" / "AuditLog.csv"
 TZ = ZoneInfo("Asia/Kolkata")
 AUDIT_HEADER = ["timestamp_ist","task_id","department","action","field",
-                "old_value","new_value","reason","source"]
+                "old_value","new_value","reason","source","operator"]
+
+# TEST-ONLY passwords for the local mock (production uses Apps Script Script Properties).
+MOCK_PWD = {"QA":"qa123","QC":"qc123","Micro":"micro123","Engineering":"eng123"}
+MOCK_ADMIN = "admin123"
+
+def _verify_login(login, pwd):
+    if not login or not pwd: return {"ok": False, "error": "login_required"}
+    if MOCK_ADMIN and pwd == MOCK_ADMIN: return {"ok": True, "admin": True, "dept": login}
+    if login not in MOCK_PWD: return {"ok": False, "error": "bad_login"}
+    if MOCK_PWD[login] == "" or pwd != MOCK_PWD[login]: return {"ok": False, "error": "bad_password"}
+    return {"ok": True, "dept": login}
+
+def _check_auth(params, task_dept):
+    login = params.get("dept_login", [""])[0].strip()
+    pwd = params.get("pwd", [""])[0]
+    operator = params.get("operator", [""])[0].strip()
+    if not login or not pwd: return {"ok": False, "error": "login_required"}
+    if not operator: return {"ok": False, "error": "operator_required"}
+    if MOCK_ADMIN and pwd == MOCK_ADMIN: return {"ok": True, "operator": operator}
+    if login not in MOCK_PWD: return {"ok": False, "error": "bad_login"}
+    if MOCK_PWD[login] == "" or pwd != MOCK_PWD[login]: return {"ok": False, "error": "bad_password"}
+    if task_dept and task_dept != login: return {"ok": False, "error": "wrong_department"}
+    return {"ok": True, "operator": operator}
 
 
 def now_ist() -> str:
@@ -46,13 +69,13 @@ def report_due(due_iso: str, due_type: str) -> str:
     return (base + timedelta(days=10)).isoformat()
 
 
-def audit(task_id, dept, action, field, old, new, reason, source):
+def audit(task_id, dept, action, field, old, new, reason, source, operator=""):
     new_file = not AUDIT.exists()
     with open(AUDIT, "a", newline="") as fh:
         w = csv.writer(fh)
         if new_file:
             w.writerow(AUDIT_HEADER)
-        w.writerow([now_ist(), task_id, dept, action, field, old, new, reason, source])
+        w.writerow([now_ist(), task_id, dept, action, field, old, new, reason, source, operator])
 
 
 def reschedule_count(task_id) -> int:
@@ -68,6 +91,9 @@ def handle(params: dict) -> dict:
     task_id = params.get("task_id", [""])[0].strip()
     if action == "health":
         return {"ok": True, "service": "mock-writeback", "time_ist": now_ist()}
+    if action == "verify_pwd":
+        return _verify_login(params.get("dept_login", [""])[0].strip(),
+                             params.get("pwd", [""])[0])
     if not task_id:
         return {"ok": False, "error": "task_id required"}
 
@@ -81,12 +107,20 @@ def handle(params: dict) -> dict:
     dept = hit["department"]
     today = today_ist()
 
+    MUTATING = {"tick_action","tick_report","untick_action","untick_report","reschedule"}
+    operator = ""
+    if action in MUTATING:
+        auth = _check_auth(params, dept)
+        if not auth["ok"]:
+            return {"ok": False, "error": "auth:" + auth["error"]}
+        operator = auth["operator"]
+
     if action == "tick_action":
         if hit["action_status"].lower() == "done":
             return {"ok": True, "noop": True, "message": "action already done"}
         hit["action_done_date"] = today
         hit["action_status"] = "done"
-        audit(task_id, dept, "tick_action", "action_status", "pending", "done", "", "dashboard")
+        audit(task_id, dept, "tick_action", "action_status", "pending", "done", "", "dashboard", operator)
     elif action == "tick_report":
         if hit["report_status"].lower() == "done":
             return {"ok": True, "noop": True, "message": "report already done"}
@@ -96,7 +130,7 @@ def handle(params: dict) -> dict:
         if link:
             hit["report_link"] = link
         audit(task_id, dept, "tick_report", "report_status", "pending",
-              "done" + (f" ({link})" if link else ""), "", "dashboard")
+              "done" + (f" ({link})" if link else ""), "", "dashboard", operator)
     elif action == "untick_action":
         if hit["action_status"].lower() != "done":
             return {"ok": True, "noop": True, "message": "action is not marked done"}
@@ -105,14 +139,14 @@ def handle(params: dict) -> dict:
         reason = params.get("reason", [""])[0].strip()
         hit["action_done_date"] = ""
         hit["action_status"] = "pending"
-        audit(task_id, dept, "untick_action", "action_status", "done", "pending", reason, "dashboard")
+        audit(task_id, dept, "untick_action", "action_status", "done", "pending", reason, "dashboard", operator)
     elif action == "untick_report":
         if hit["report_status"].lower() != "done":
             return {"ok": True, "noop": True, "message": "report is not marked done"}
         reason = params.get("reason", [""])[0].strip()
         hit["report_done_date"] = ""
         hit["report_status"] = "pending"
-        audit(task_id, dept, "untick_report", "report_status", "done", "pending", reason, "dashboard")
+        audit(task_id, dept, "untick_report", "report_status", "done", "pending", reason, "dashboard", operator)
     elif action == "reschedule":
         new_due = params.get("new_due_date", [""])[0].strip()
         reason = params.get("reason", [""])[0].strip()
@@ -126,11 +160,11 @@ def handle(params: dict) -> dict:
         hit["due_date"] = new_due
         hit["reschedule_reason"] = reason
         hit["report_due_date"] = report_due(new_due, hit["due_type"])
-        audit(task_id, dept, "reschedule", "due_date", old_due, new_due, reason, "dashboard")
+        audit(task_id, dept, "reschedule", "due_date", old_due, new_due, reason, "dashboard", operator)
         n = reschedule_count(task_id)
         if n >= 2:
             audit(task_id, dept, "reschedule_flag", "reschedule_count", str(n-1), str(n),
-                  f"task rescheduled {n} times — director attention", "system")
+                  f"task rescheduled {n} times — director attention", "system", operator)
         with open(MASTER, "w", newline="") as fh:
             w = csv.DictWriter(fh, fieldnames=cols); w.writeheader(); w.writerows(rows)
         return {"ok": True, "task_id": task_id, "due_date": new_due, "reschedule_count": n}
