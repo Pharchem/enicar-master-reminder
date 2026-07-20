@@ -16,11 +16,14 @@ local_fallback_csv: "data/sheets/MASTER_consolidated.csv"
 timezone: "Asia/Kolkata"            # all date math in IST
 director_email: "nimishpatil@enicarpharma.com"  # FROM address on every email (must match MAIL_USERNAME account)
 
+# A department may have one address (string) or several (list) — all get TO'd.
 department_emails:
   QA: "qa@enicarpharma.com"
   QC: "qc@enicarpharma.com"
   Micro: "micro@enicarpharma.com"
-  Engineering: "engineering@enicarpharma.com"
+  Engineering:
+    - "engineering@enicarpharma.com"
+    - "enicarengineering@gmail.com"
 
 # QA oversight: CC'd on every reminder to every department.
 # (Automatically skipped when the recipient IS QA — no self-duplication.)

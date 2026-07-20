@@ -352,17 +352,18 @@ def append_sentlog(path: Path, entries: list[tuple[str, str, str]], tz: str) -> 
 # --------------------------------------------------------------------------- #
 # Recipients & message building
 # --------------------------------------------------------------------------- #
-def recipients_for(cfg: dict, dept: str, critical: bool) -> tuple[str, list[str]]:
-    to = cfg["department_emails"].get(dept, dept)
+def recipients_for(cfg: dict, dept: str, critical: bool) -> tuple[list[str], list[str]]:
+    raw = cfg["department_emails"].get(dept, dept)
+    tos = list(raw) if isinstance(raw, (list, tuple)) else [raw]
     cc: list[str] = []
     qa_cc = cfg.get("qa_oversight_cc", "")
-    if qa_cc and qa_cc != to:
+    if qa_cc and qa_cc not in tos:
         cc.append(qa_cc)
     if critical:
         for a in cfg.get("admin_cc", []):
-            if not _is_placeholder(a) and a not in cc and a != to:
+            if not _is_placeholder(a) and a not in cc and a not in tos:
                 cc.append(a)
-    return to, cc
+    return tos, cc
 
 
 def build_messages(cfg: dict, touches: list[Touch], today: date) -> list[dict]:
@@ -414,7 +415,8 @@ def send_smtp(cfg: dict, msg: dict) -> None:
     mime = MIMEText(msg["body"], "plain", "utf-8")
     mime["Subject"] = msg["subject"]
     mime["From"] = formataddr(("Enicar Reminder System", frm))
-    mime["To"] = msg["to"]
+    tos = msg["to"] if isinstance(msg["to"], list) else [msg["to"]]
+    mime["To"] = ", ".join(tos)
     if msg["cc"]:
         mime["Cc"] = ", ".join(msg["cc"])
     if msg.get("critical"):
@@ -424,7 +426,7 @@ def send_smtp(cfg: dict, msg: dict) -> None:
     with smtplib.SMTP(cfg["smtp_host"], cfg["smtp_port"]) as s:
         s.starttls(context=ctx)
         s.login(user, pw)
-        s.sendmail(frm, [msg["to"]] + msg["cc"], mime.as_string())
+        s.sendmail(frm, tos + msg["cc"], mime.as_string())
 
 
 # --------------------------------------------------------------------------- #
@@ -464,7 +466,8 @@ def run(as_of: date | None = None, dry_run: bool | None = None,
         blocks.append(
             f"--- {'DRY-RUN' if dry_run else 'SENT'} "
             f"{'[CRITICAL] ' if m['critical'] else ''}[{m['department']}] {today.isoformat()}\n"
-            f"TO: {m['to']}\nCC: {', '.join(m['cc']) if m['cc'] else '(none)'}\n"
+            f"TO: {', '.join(m['to']) if isinstance(m['to'], list) else m['to']}\n"
+            f"CC: {', '.join(m['cc']) if m['cc'] else '(none)'}\n"
             f"PRIORITY: {'high (X-Priority: 1)' if m['critical'] else 'normal'}\n"
             f"SUBJECT: {m['subject']}\n{m['body']}\n")
         if not dry_run:

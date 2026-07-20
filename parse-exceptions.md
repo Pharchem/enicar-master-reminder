@@ -34,9 +34,12 @@ matrix parsed cleanly. Notes on items deliberately **not** registered (not error
   QCI/02092). No date exists to register — excluded, not invented.
 - 2 secondary "Yearly (Outside agency)" chains (Vacuum Oven, Dry Oven) carry no dates; only
   their dated quarterly chains were registered.
-- Prior-year stability tabs (`3075_2023/2024/2025`, `4075_2024/2025`) were skipped as
-  historical. One stray parser initially included them (1,001 extra rows) and produced a
-  3.0 MB register; that output was discarded in favour of the spec-correct current-year set.
+- **Update 2026-07-19 (director instruction):** the prior-year stability tabs
+  (`3075_2023/2024/2025`, `4075_2024/2025`) are now PARSED as well — they carry 12-M/18-M/
+  24-M/36-M pulls falling due in 2026–27. This added 1,001 pull occurrences (QC total now
+  1,206). Only pulls dated inside the window are registered; 3 unparseable `30.02.2024`
+  dates in `3075_2023` are excepted (out-of-window either way). Existing task IDs were
+  verified unchanged.
 
 ## Engineering — 0 exceptions
 

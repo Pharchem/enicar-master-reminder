@@ -174,11 +174,18 @@ for i in range(len(block_starts) - 1):
 STAB_FILE = "QC/Stability_2026.xls"
 wbs = xlrd.open_workbook(os.path.join(ROOT, STAB_FILE))
 
+# ORDER MATTERS: the 2026 tabs MUST stay first — the NNN counter runs in tab order,
+# and the live Google Sheet already references the task_ids generated from them.
+# Prior-year tabs are included after (their late-station pulls fall due in 2026-27).
 STAB_TABS = {
     "3075_2026": {"type": "long-term",   "stations": ["3-M","6-M","9-M","12-M","18-M","24-M","36-M"]},
     "4075_2026": {"type": "accelerated", "stations": ["1-M","3-M","6-M"]},
+    "3075_2025": {"type": "long-term",   "stations": ["3-M","6-M","9-M","12-M","18-M","24-M","36-M"]},
+    "4075_2025": {"type": "accelerated", "stations": ["1-M","3-M","6-M"]},
+    "3075_2024": {"type": "long-term",   "stations": ["3-M","6-M","9-M","12-M","18-M","24-M","36-M"]},
+    "4075_2024": {"type": "accelerated", "stations": ["1-M","3-M","6-M"]},
+    "3075_2023": {"type": "long-term",   "stations": ["3-M","6-M","9-M","12-M","18-M","24-M","36-M"]},
 }
-# Historical tabs present but excluded:
 HIST_TABS = [t for t in wbs.sheet_names() if t not in STAB_TABS]
 
 nnn_counter = 0
@@ -262,12 +269,14 @@ with open(OUT_EXC, "w") as f:
     f.write("Source planners: `%s`, `%s`\n" % (CAL_FILE, STAB_FILE))
     f.write("Reference date 2026-07-15. Window 2026-01-01 .. 2027-07-31.\n\n")
 
-    f.write("## Excluded historical stability tabs\n\n")
-    f.write("The following prior-year tabs exist in `%s` and were SKIPPED as historical "
-            "data (not current-year studies):\n\n" % STAB_FILE)
-    for t in HIST_TABS:
-        f.write("- `%s`\n" % t)
-    f.write("\n")
+    f.write("## Stability tabs coverage\n\n")
+    f.write("ALL study tabs in `%s` are parsed (2026 + prior-year studies): %s. "
+            "Only pull dates inside the window are registered; earlier pulls from "
+            "historical studies are assumed already performed and are not tracked.\n\n"
+            % (STAB_FILE, ", ".join("`%s`" % t for t in STAB_TABS)))
+    if HIST_TABS:
+        f.write("Tabs present but NOT parsed: %s\n\n"
+                % ", ".join("`%s`" % t for t in HIST_TABS))
 
     f.write("## Unparseable / ambiguous rows\n\n")
     if exceptions:

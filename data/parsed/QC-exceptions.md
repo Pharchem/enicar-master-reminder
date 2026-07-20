@@ -3,19 +3,17 @@
 Source planners: `QC/Calibration Planner_26_27_QC.xls`, `QC/Stability_2026.xls`
 Reference date 2026-07-15. Window 2026-01-01 .. 2027-07-31.
 
-## Excluded historical stability tabs
+## Stability tabs coverage
 
-The following prior-year tabs exist in `QC/Stability_2026.xls` and were SKIPPED as historical data (not current-year studies):
-
-- `3075_2024`
-- `4075_2024`
-- `3075_2025`
-- `4075_2025`
-- `3075_2023`
+ALL study tabs in `QC/Stability_2026.xls` are parsed (2026 + prior-year studies): `3075_2026`, `4075_2026`, `3075_2025`, `4075_2025`, `3075_2024`, `4075_2024`, `3075_2023`. Only pull dates inside the window are registered; earlier pulls from historical studies are assumed already performed and are not tracked.
 
 ## Unparseable / ambiguous rows
 
-_None. All dated cells parsed cleanly._
+| source_file | sheet | row | cell | reason |
+|---|---|---|---|---|
+| QC/Stability_2026.xls | 3075_2023 | 38 | 9-M='30.02.2024' | Unparseable pull date (invalid calendar date (day 30 must be in range 1..29 for month 2 in year 2024)) for TUSPEL PLUS EXPECTORANT batch 23CH0064; suggested reading: verify DD.MM.YYYY |
+| QC/Stability_2026.xls | 3075_2023 | 39 | 9-M='30.02.2024' | Unparseable pull date (invalid calendar date (day 30 must be in range 1..29 for month 2 in year 2024)) for TUSPEL LS batch 23CH0072; suggested reading: verify DD.MM.YYYY |
+| QC/Stability_2026.xls | 3075_2023 | 40 | 9-M='30.02.2024' | Unparseable pull date (invalid calendar date (day 30 must be in range 1..29 for month 2 in year 2024)) for TUSPEL LS batch 23CH0009; suggested reading: verify DD.MM.YYYY |
 
 ## Assignments to confirm / notes
 

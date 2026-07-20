@@ -34,9 +34,13 @@ DEPT_EMAIL = {
 }
 
 
-def report_due(due: str) -> str:
-    d = datetime.strptime(due, "%Y-%m-%d") + timedelta(days=10)
-    return d.strftime("%Y-%m-%d")
+def report_due(due: str, due_type: str = "specific_date") -> str:
+    d = datetime.strptime(due, "%Y-%m-%d")
+    if due_type == "month_window":
+        # report clock runs from the end of the due month
+        import calendar
+        d = d.replace(day=calendar.monthrange(d.year, d.month)[1])
+    return (d + timedelta(days=10)).strftime("%Y-%m-%d")
 
 
 def migrate_file(path: Path) -> str:
@@ -57,7 +61,7 @@ def migrate_file(path: Path) -> str:
             "equipment_or_item_id": x["equipment_or_item_id"],
             "activity_type": x["activity_type"], "frequency": x["frequency"],
             "due_type": x["due_type"], "due_date": x["due_date"],
-            "report_due_date": report_due(x["due_date"]),
+            "report_due_date": report_due(x["due_date"], x["due_type"]),
             "last_done_date": x["last_done_date"],
             "action_done_date": done, "action_status": "done" if done else "pending",
             "report_done_date": "", "report_status": "pending",
