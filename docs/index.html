@@ -90,6 +90,14 @@
   button.rs{color:var(--muted);font-weight:500}
   button:disabled{opacity:.5;cursor:default}
   .done-note{font-size:12px;color:var(--green);font-weight:600;white-space:nowrap}
+  .chip-link{display:inline-block;font-size:11.5px;font-weight:600;padding:4px 9px;
+    border-radius:8px;background:var(--green-bg);color:var(--green);text-decoration:none;
+    border:1px solid var(--green);white-space:nowrap}
+  .chip-link:hover{text-decoration:underline}
+  .chip-nolink{display:inline-block;font-size:11px;padding:4px 9px;border-radius:8px;
+    background:var(--chip);color:var(--muted);border:1px dashed var(--line);white-space:nowrap}
+  .nolink-count{font-size:11px;font-weight:600;color:var(--amber);background:var(--amber-bg);
+    border-radius:999px;padding:1px 9px;margin-right:8px}
   button.undo{padding:5px 9px;font-size:11.5px;color:var(--muted)}
   button.undo:hover{border-color:var(--amber);color:var(--amber)}
   .search{border:1px solid var(--line);background:var(--card);color:var(--ink);
@@ -161,9 +169,9 @@
 
 <dialog id="logindlg">
   <h3>Sign in to update tasks</h3>
-  <div class="dsmall">Enter your department password and your name. You stay signed in on this
-    device until you sign out or close the tab, so you can tick several tasks in one go.
-    Your name is recorded in the audit log for every change.</div>
+  <div class="dsmall">Enter your department password and your name. You stay signed in for
+    <b>1 hour</b> (or until you sign out / close the tab), so you can tick several tasks in
+    one go. Your name is recorded in the audit log for every change.</div>
   <label>Department</label>
   <select id="lgdept"></select>
   <label>Department password</label>
@@ -200,7 +208,7 @@
   </div>
 </dialog>
 
-<script src="config.js?v=5"></script>
+<script src="config.js?v=6"></script>
 <script>
 const CFG = window.ENICAR_CONFIG || {};
 const DEPTS = ["QA","QC","Micro","Engineering"];
@@ -349,8 +357,13 @@ function render(){
     const hf=items.filter(isHF), norm=items.filter(t=>!isHF(t));
     norm.sort((x,y)=>(parseISO(x.due_date)-parseISO(y.due_date))||0);
     const collapsed=(activeFilter==="all" && (b.key==="later"||b.key==="completed"||b.key==="upcoming"))?"collapsed":"";
+    let headExtra="";
+    if(b.key==="completed"){
+      const noLink=items.filter(t=>!(t.report_link||"").trim()).length;
+      if(noLink) headExtra=`<span class="nolink-count">${noLink} without report link</span>`;
+    }
     html+=`<section class="bucket ${b.cls} ${collapsed}">
-      <div class="bhead">${b.label}<span class="count">${items.length}<span class="chev">▾</span></span></div>
+      <div class="bhead">${b.label}<span class="count">${headExtra}${items.length}<span class="chev">▾</span></span></div>
       <div class="bbody">`;
     const bkey=activeDept+"|"+b.key;
     const capped = norm.length>SECTION_CAP && !showAll[bkey] && !SEARCH;
@@ -404,9 +417,14 @@ function taskRow(t,bucket){
   const flags=(rsN?`<span class="pill ${rsN>=2?'flag':''}">rescheduled ${rsN}×</span>`:"")+
     (t.due_type==="month_window"?`<span class="pill">any day that month</span>`:"")+
     (t.rescheduled_from?`<span class="pill">was ${esc(fmtLong(t.rescheduled_from))}</span>`:"");
+  const link=(t.report_link||"").trim();
+  const evidence = link
+    ? `<a class="chip-link" href="${esc(link)}" target="_blank" rel="noopener noreferrer">📎 View report</a>`
+    : `<span class="chip-nolink">no report link</span>`;
   let controls;
   if(rDone(t)){
     controls=`<span class="done-note">✔ Completed ${esc(fmtLong(t.report_done_date||t.action_done_date||""))}</span>
+      ${evidence}
       <button class="rs undo" data-act="untick_report" data-id="${id}">↺ Undo</button>`;
   } else {
     controls=
@@ -443,9 +461,25 @@ const AUTH_MSG={login_required:"Please sign in first.",operator_required:"Enter 
 function authMsg(code){ return AUTH_MSG[code]||("Login problem ("+code+")."); }
 
 /* -------- department login session (attribution) -------- */
-function getSession(){ try{return JSON.parse(sessionStorage.getItem("enicar_login")||"null");}catch(e){return null;} }
+const SESSION_TTL=60*60*1000;   // sign-in lasts 1 hour, then password is required again
+function getSession(){
+  try{
+    const s=JSON.parse(sessionStorage.getItem("enicar_login")||"null");
+    if(!s) return null;
+    if(s.loginAt && (Date.now()-s.loginAt)>SESSION_TTL){ clearSession(); return null; }
+    return s;
+  }catch(e){ return null; }
+}
 function setSession(s){ sessionStorage.setItem("enicar_login",JSON.stringify(s)); }
 function clearSession(){ sessionStorage.removeItem("enicar_login"); }
+// Auto-flip the bar to "Not signed in" the moment a session passes its 1-hour limit.
+setInterval(()=>{
+  const bar=document.getElementById("loginbar");
+  if(bar && bar.classList.contains("on") && !getSession()){
+    updateLoginBar(); render();
+    toast("Session expired (1 hour) — please sign in again to continue.","bad");
+  }
+}, 30000);
 
 function updateLoginBar(){
   const s=getSession(), el=document.getElementById("loginbar");
@@ -491,7 +525,7 @@ function ensureLogin(taskDept){
       try{
         const j=await verifyLogin(dept,pwd);
         if(!j.ok){toast("✗ "+authMsg(j.error),"bad");return;}
-        const sess={dept:dept,pwd:pwd,operator:name,admin:!!j.admin};
+        const sess={dept:dept,pwd:pwd,operator:name,admin:!!j.admin,loginAt:Date.now()};
         setSession(sess); localStorage.setItem("enicar_lastname",name);
         dlg.close(); updateLoginBar();
         if(taskDept && !sess.admin && sess.dept!==taskDept){
