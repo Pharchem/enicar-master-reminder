@@ -654,41 +654,68 @@ async function onAction(btn){
 }
 
 /* ---------------------------------- loading ----------------------------------------- */
-async function load(){
-  document.getElementById("board").innerHTML=`<div class="loading">Loading tasks…</div>`;
-  try{
-    const r=await fetch(SHEET_URL,{cache:"no-store"});
-    if(!r.ok) throw new Error("HTTP "+r.status);
-    DATA=parseCSV(await r.text());
-    const now=new Date();
-    document.getElementById("src").textContent =
-      (ph(CFG.SHEET_CSV_URL)?"Local test data":"Live Sheet")+
-      " · loaded "+now.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})+
-      " · "+`${String(TODAY.getDate()).padStart(2,"0")} ${MON[TODAY.getMonth()]} ${TODAY.getFullYear()}`;
-  }catch(e){
-    document.getElementById("board").innerHTML=
-      `<div class="err">Could not load task data (${esc(e.message)}). Check your connection and press Refresh.</div>`;
-    return;
-  }
-  try{
-    const r=await fetch(AUDIT_URL,{cache:"no-store"});
-    if(r.ok){
-      const audit=parseCSV(await r.text());
-      RESCHED={};
-      audit.filter(a=>a.action==="reschedule").forEach(a=>{
-        RESCHED[a.task_id]=(RESCHED[a.task_id]||0)+1;});
-    }
-  }catch(e){/* audit optional */}
-  applyOverlay(DATA);
-  updateLoginBar();
+const CSV_CACHE_KEY="enicar_master_csv_v1";
+const DATE_STR=`${String(TODAY.getDate()).padStart(2,"0")} ${MON[TODAY.getMonth()]} ${TODAY.getFullYear()}`;
+function setSrc(note){
+  const label=ph(CFG.SHEET_CSV_URL)?"Local test data":"Live Sheet";
+  document.getElementById("src").textContent=`${label} · ${note} · ${DATE_STR}`;
+}
+function nowHM(){ return new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}); }
+function pickDept(){
   if(!DEPTS.includes(activeDept)||!DATA.some(t=>t.department===activeDept)){
     const worst=DEPTS.map(d=>[d,DATA.filter(t=>t.department===d&&classify(t).bucket==="overdue").length])
       .sort((a,b)=>b[1]-a[1])[0];
     activeDept=worst?worst[0]:"QA";
   }
+}
+function paint(csvText){
+  DATA=parseCSV(csvText);
+  applyOverlay(DATA);
+  updateLoginBar();
+  pickDept();
   render();
 }
-document.getElementById("refreshbtn").onclick=load;
+
+// Fetch the reschedule watch-list in the background — never blocks the board.
+async function fetchAudit(){
+  try{
+    const r=await fetch(AUDIT_URL,{cache:"no-store"});
+    if(!r.ok) return;
+    const audit=parseCSV(await r.text());
+    const next={};
+    audit.filter(a=>a.action==="reschedule").forEach(a=>{next[a.task_id]=(next[a.task_id]||0)+1;});
+    // only re-render if the watch list actually changed
+    if(JSON.stringify(next)!==JSON.stringify(RESCHED)){ RESCHED=next; render(); }
+  }catch(e){/* audit optional */}
+}
+
+async function load(){
+  // 1) Instant paint from the last saved copy (no network wait on repeat visits).
+  let hadCache=false;
+  if(!DATA.length){
+    const cached=localStorage.getItem(CSV_CACHE_KEY);
+    if(cached){ try{ paint(cached); setSrc("saved copy · updating…"); hadCache=true; }catch(e){} }
+    else document.getElementById("board").innerHTML=`<div class="loading">Loading tasks…</div>`;
+  }
+  // 2) Fetch the fresh Sheet (in the background if we already showed a cached copy).
+  let txt;
+  try{
+    const r=await fetch(SHEET_URL,{cache:"no-store"});
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    txt=await r.text();
+  }catch(e){
+    if(hadCache) setSrc("saved copy · offline");
+    else document.getElementById("board").innerHTML=
+      `<div class="err">Could not load task data (${esc(e.message)}). Check your connection and press Refresh.</div>`;
+    return;
+  }
+  try{ localStorage.setItem(CSV_CACHE_KEY, txt); }catch(e){/* quota — ignore */}
+  paint(txt);
+  setSrc("loaded "+nowHM());
+  // 3) Watch-list loads after the board is already on screen.
+  fetchAudit();
+}
+document.getElementById("refreshbtn").onclick=()=>{ setSrc("updating…"); load(); };
 document.getElementById("search").addEventListener("input",e=>{
   SEARCH=e.target.value.trim().toLowerCase(); render();});
 // first visit: open on the worst department
