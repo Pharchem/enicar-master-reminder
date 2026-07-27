@@ -15,6 +15,8 @@ local_fallback_csv: "data/sheets/MASTER_consolidated.csv"
 # ---- Identity / routing -----------------------------------------------------
 timezone: "Asia/Kolkata"            # all date math in IST
 director_email: "nimishpatil@enicarpharma.com"  # FROM address on every email (must match MAIL_USERNAME account)
+# Public dashboard link included in every email so staff can act in one tap.
+dashboard_url: "https://pharchem.github.io/enicar-master-reminder/"
 
 # A department may have one address (string) or several (list) — all get TO'd.
 department_emails:

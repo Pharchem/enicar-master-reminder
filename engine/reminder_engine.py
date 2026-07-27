@@ -123,6 +123,16 @@ def last_day_of_month(d: date) -> date:
     return date(d.year, d.month + 1, 1) - timedelta(days=1)
 
 
+_MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+
+def fmt_dmy(iso: str) -> str:
+    """YYYY-MM-DD -> '04 Jan 2026' (plain, unambiguous for staff)."""
+    d = parse_iso(iso)
+    return f"{d.day:02d} {_MON[d.month - 1]} {d.year}" if d else (iso or "")
+
+
 def every_n_after(today: date, anchor: date, n: int) -> bool:
     """True when `today` is anchor+n, anchor+2n, ... (strictly after anchor)."""
     delta = (today - anchor).days
@@ -366,39 +376,113 @@ def recipients_for(cfg: dict, dept: str, critical: bool) -> tuple[list[str], lis
     return tos, cc
 
 
+DIGEST_CAP = 25   # most-urgent items listed per section; the rest point to the dashboard
+
+
+def _short_line(t: Touch, today: date) -> str:
+    """One clean, plain-language line for a task inside a digest."""
+    f = _fmt(t.row)
+    eid = f" [{f['eid']}]" if f["eid"] else ""
+    tt = t.touch_type
+    if tt == "action_critical":
+        d = parse_iso(t.row.get("due_date", ""))
+        if t.row.get("due_type") == "month_window" and d:
+            d = last_day_of_month(d)
+        n = (today - d).days if d else 0
+        return f"{f['task']}{eid} — was due {fmt_dmy(f['due'])}, {n} day(s) overdue"
+    if tt == "report_critical":
+        rd = parse_iso(t.row.get("report_due_date", ""))
+        n = (today - rd).days if rd else 0
+        return f"{f['task']}{eid} — REPORT was due {fmt_dmy(f['rdue'])}, {n} day(s) overdue"
+    if tt == "planning":
+        return f"{f['task']}{eid} — due {fmt_dmy(f['due'])} (plan it now)"
+    if tt == "start":
+        return f"{f['task']}{eid} — due {fmt_dmy(f['due'])} (start today)"
+    if tt == "status_nag":
+        return f"{f['task']}{eid} — due {fmt_dmy(f['due'])} (not yet marked done)"
+    if tt == "report_chaser":
+        return f"{f['task']}{eid} — done; report due {fmt_dmy(f['rdue'])}"
+    if tt == "high_freq":
+        return f"{f['task']}{eid} — scheduled today ({fmt_dmy(f['due'])})"
+    return f"{f['task']}{eid} — {fmt_dmy(f['due'])}"
+
+
+def _dashboard_footer(cfg: dict) -> str:
+    url = cfg.get("dashboard_url", "")
+    link = f"\n\nOpen the dashboard: {url}" if not _is_placeholder(url) else ""
+    return (
+        "\nWhat to do: open the dashboard, choose your department, sign in with your "
+        "department password, then tick 'Action done' when the task is completed and "
+        "'Report done' when the report is filed. If a task genuinely cannot be done on "
+        "time, use 'Reschedule' and give the reason — do not let it stay overdue." + link)
+
+
+def _section(title: str, items: list[Touch], today: date) -> str:
+    if not items:
+        return ""
+    shown = items[:DIGEST_CAP]
+    lines = [title]
+    lines += [f"  - {_short_line(t, today)}" for t in shown]
+    if len(items) > DIGEST_CAP:
+        lines.append(f"  ...and {len(items) - DIGEST_CAP} more — see the full list on the dashboard.")
+    return "\n".join(lines) + "\n"
+
+
 def build_messages(cfg: dict, touches: list[Touch], today: date) -> list[dict]:
     """[{to, cc, subject, body, critical, keys[], department}] — per-task by default,
-    or one digest per department when batch_by_department is enabled. Baseline
+    or one clean digest per department when batch_by_department is enabled. Baseline
     touches are always their own email (they are already one-per-department)."""
+    dash = cfg.get("dashboard_url", "")
+    dash_line = f"\n\nOpen the dashboard: {dash}" if not _is_placeholder(dash) else ""
     baseline = [t for t in touches if t.touch_type == "baseline"]
     normal = [t for t in touches if t.touch_type != "baseline"]
     msgs = []
     for t in baseline:
         to, cc = recipients_for(cfg, t.department, critical=False)
-        msgs.append({"to": to, "cc": cc, "subject": t.subject, "body": t.body,
+        msgs.append({"to": to, "cc": cc, "subject": t.subject, "body": t.body + dash_line,
                      "critical": False, "department": t.department,
                      "keys": [(today.isoformat(), t.task_id, t.touch_type)]})
+
     if not cfg.get("batch_by_department", False):
         for t in normal:
             to, cc = recipients_for(cfg, t.department, t.critical)
-            msgs.append({"to": to, "cc": cc, "subject": t.subject, "body": t.body,
+            msgs.append({"to": to, "cc": cc, "subject": t.subject, "body": t.body + dash_line,
                          "critical": t.critical, "department": t.department,
                          "keys": [(today.isoformat(), t.task_id, t.touch_type)]})
         return msgs
+
+    # ---- department digest: grouped, capped, plain language ----
     by_dept: dict[str, list[Touch]] = {}
     for t in normal:
         by_dept.setdefault(t.department, []).append(t)
     for dept, ts in sorted(by_dept.items()):
-        crit = [t for t in ts if t.critical]
-        to, cc = recipients_for(cfg, dept, critical=bool(crit))
-        subj = (f"{'[CRITICAL] ' if crit else ''}[{dept}] Daily task reminders — "
-                f"{len(ts)} item(s) ({len(crit)} critical) — {today.isoformat()}")
-        lines = [f"Daily reminder digest for {dept} — {today.isoformat()} (IST).",
-                 f"{len(ts)} item(s), of which {len(crit)} are CRITICAL/overdue.\n"]
-        for i, t in enumerate(sorted(ts, key=lambda x: (not x.critical, x.task_id)), 1):
-            lines.append(f"{i}. {t.subject}\n   {t.body}")
-        msgs.append({"to": to, "cc": cc, "subject": subj, "body": "\n".join(lines),
-                     "critical": bool(crit), "department": dept,
+        overdue = sorted([t for t in ts if t.critical],
+                         key=lambda x: x.row.get("due_date", ""))
+        reports = [t for t in ts if not t.critical and t.touch_type == "report_chaser"]
+        upcoming = sorted([t for t in ts if not t.critical and t.touch_type != "report_chaser"],
+                          key=lambda x: x.row.get("due_date", ""))
+        has_crit = bool(overdue)
+        to, cc = recipients_for(cfg, dept, critical=has_crit)
+
+        subj = (f"{'[CRITICAL] ' if has_crit else ''}{dept} tasks — "
+                f"{len(overdue)} overdue, {len(upcoming) + len(reports)} to plan — "
+                f"{fmt_dmy(today.isoformat())}")
+
+        intro = [f"Good morning, {dept} team.",
+                 f"Here is your task status for {fmt_dmy(today.isoformat())}:",
+                 f"  • {len(overdue)} overdue (need action now)",
+                 f"  • {len(upcoming)} coming up / in progress",
+                 f"  • {len(reports)} completed but report still to be filed", ""]
+        body = "\n".join(intro)
+        body += _section("OVERDUE — please complete and tick on the dashboard:", overdue, today)
+        body += ("\n" if overdue else "") + _section(
+            "COMING UP / IN PROGRESS:", upcoming, today)
+        body += ("\n" if upcoming else "") + _section(
+            "REPORTS TO FILE (task done, report pending):", reports, today)
+        body += _dashboard_footer(cfg)
+
+        msgs.append({"to": to, "cc": cc, "subject": subj, "body": body,
+                     "critical": has_crit, "department": dept,
                      "keys": [(today.isoformat(), t.task_id, t.touch_type) for t in ts]})
     return msgs
 
