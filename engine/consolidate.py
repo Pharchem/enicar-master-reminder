@@ -19,6 +19,21 @@ DEPTS = ["QA","QC","Micro","Engineering"]
 AUDIT_HEADER = ["timestamp_ist","task_id","department","action","field",
                 "old_value","new_value","reason","source","operator"]
 
+# Normalize typographic punctuation to plain ASCII so names render identically in
+# every mail client, terminal, and CSV tool (degree sign etc. are preserved).
+_ASCII_MAP = {
+    "–": "-", "—": "-", "‒": "-", "−": "-",   # –, —, ‒, −  -> -
+    "‘": "'", "’": "'", "‚": "'", "′": "'",   # ‘ ’ ‚ ′  -> '
+    "“": '"', "”": '"', "„": '"', "″": '"',   # “ ” „ ″  -> "
+    "…": "...", " ": " ",                                 # ellipsis, nbsp
+    "­": "",                                                   # soft hyphen -> remove
+}
+_ASCII_TABLE = {ord(k): v for k, v in _ASCII_MAP.items()}
+
+
+def clean_text(s: str) -> str:
+    return (s or "").translate(_ASCII_TABLE)
+
 
 def main():
     parsed = ROOT / "data" / "parsed"
@@ -32,6 +47,11 @@ def main():
             if r.fieldnames != SPEC:
                 raise SystemExit(f"SCHEMA MISMATCH in {f.name}: {r.fieldnames}")
             rows.extend(dict(x) for x in r)
+
+    # normalize typographic punctuation to ASCII in every text field
+    for x in rows:
+        for k in x:
+            x[k] = clean_text(x[k])
 
     # uniqueness + validity checks
     ids = [x["task_id"] for x in rows]
