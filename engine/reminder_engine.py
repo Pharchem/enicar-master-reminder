@@ -60,12 +60,11 @@ except ImportError:
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = ROOT / "config" / "config.yaml"
 PLACEHOLDER_TOKENS = ("PASTE_", "_HERE")
-DEPTS = ["QA", "QC", "Micro", "Engineering", "QA SOP"]
-SOP_DEPT = "QA SOP"
+DEPTS = ["QA", "QC", "Micro", "Engineering", "Production", "Store", "PA-EHS", "RA"]
 
 
 def is_sop(row: dict) -> bool:
-    return (row.get("department") or "").strip() == SOP_DEPT
+    return (row.get("planner_type") or "").strip() == "SOP Review"
 
 
 # --------------------------------------------------------------------------- #
@@ -416,22 +415,17 @@ def append_sentlog(path: Path, entries: list[tuple[str, str, str]], tz: str) -> 
 # --------------------------------------------------------------------------- #
 # Recipients & message building
 # --------------------------------------------------------------------------- #
-def recipients_for(cfg: dict, dept: str, critical: bool) -> tuple[list[str], list[str]]:
+def recipients_for(cfg: dict, dept: str, critical: bool, sop: bool = False) -> tuple[list[str], list[str]]:
     raw = cfg["department_emails"].get(dept, dept)
     tos = list(raw) if isinstance(raw, (list, tuple)) else [raw]
     cc: list[str] = []
-    # QA SOP is a QA-only chain: no oversight CC; on critical, CC Swarali only.
-    if dept == cfg.get("sop_department", "QA SOP"):
-        if critical:
-            for a in cfg.get("sop_critical_cc", []):
-                if not _is_placeholder(a) and a not in cc and a not in tos:
-                    cc.append(a)
-        return tos, cc
     qa_cc = cfg.get("qa_oversight_cc", "")
     if qa_cc and qa_cc not in tos:
         cc.append(qa_cc)
     if critical:
-        for a in cfg.get("admin_cc", []):
+        # SOP critical -> Swarali only; normal critical -> full ADMIN list.
+        crit_list = cfg.get("sop_critical_cc", []) if sop else cfg.get("admin_cc", [])
+        for a in crit_list:
             if not _is_placeholder(a) and a not in cc and a not in tos:
                 cc.append(a)
     return tos, cc
@@ -496,7 +490,10 @@ def build_messages(cfg: dict, touches: list[Touch], today: date) -> list[dict]:
     dash = cfg.get("dashboard_url", "")
     dash_line = f"\n\nOpen the dashboard: {dash}" if not _is_placeholder(dash) else ""
     baseline = [t for t in touches if t.touch_type == "baseline"]
-    normal = [t for t in touches if t.touch_type != "baseline"]
+    # SOP reviews are billed as their own per-department chain (different critical CC:
+    # Swarali, not the full ADMIN list), so keep them separate from the normal digest.
+    sop = [t for t in touches if t.touch_type != "baseline" and is_sop(t.row)]
+    normal = [t for t in touches if t.touch_type != "baseline" and not is_sop(t.row)]
     msgs = []
     for t in baseline:
         to, cc = recipients_for(cfg, t.department, critical=False)
@@ -505,12 +502,34 @@ def build_messages(cfg: dict, touches: list[Touch], today: date) -> list[dict]:
                      "keys": [(today.isoformat(), t.task_id, t.touch_type)]})
 
     if not cfg.get("batch_by_department", False):
-        for t in normal:
-            to, cc = recipients_for(cfg, t.department, t.critical)
+        for t in normal + sop:
+            to, cc = recipients_for(cfg, t.department, t.critical, sop=is_sop(t.row))
             msgs.append({"to": to, "cc": cc, "subject": t.subject, "body": t.body + dash_line,
                          "critical": t.critical, "department": t.department,
                          "keys": [(today.isoformat(), t.task_id, t.touch_type)]})
         return msgs
+
+    # ---- SOP review digest: one per department, qa@ CC'd, Swarali on critical ----
+    sop_by: dict[str, list[Touch]] = {}
+    for t in sop:
+        sop_by.setdefault(t.department, []).append(t)
+    for dept, ts in sorted(sop_by.items()):
+        overdue = sorted([t for t in ts if t.critical], key=lambda x: x.row.get("due_date", ""))
+        upcoming = sorted([t for t in ts if not t.critical], key=lambda x: x.row.get("due_date", ""))
+        has_crit = bool(overdue)
+        to, cc = recipients_for(cfg, dept, critical=has_crit, sop=True)
+        subj = (f"{'[CRITICAL] ' if has_crit else ''}{dept} SOP reviews — "
+                f"{len(overdue)} overdue, {len(upcoming)} upcoming — {fmt_dmy(today.isoformat())}")
+        intro = [f"{dept} — SOP review reminders for {fmt_dmy(today.isoformat())}:",
+                 f"  • {len(overdue)} overdue (review now)",
+                 f"  • {len(upcoming)} due soon", ""]
+        body = "\n".join(intro)
+        body += _section("OVERDUE SOP REVIEWS — review and tick on the dashboard:", overdue, today)
+        body += ("\n" if overdue else "") + _section("SOP REVIEWS DUE SOON:", upcoming, today)
+        body += _dashboard_footer(cfg)
+        msgs.append({"to": to, "cc": cc, "subject": subj, "body": body,
+                     "critical": has_crit, "department": dept,
+                     "keys": [(today.isoformat(), t.task_id, t.touch_type) for t in ts]})
 
     # ---- department digest: grouped, capped, plain language ----
     by_dept: dict[str, list[Touch]] = {}

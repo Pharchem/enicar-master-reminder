@@ -31,6 +31,10 @@ DEPT_EMAIL = {
     "QC": "qc@enicarpharma.com",
     "Micro": "micro@enicarpharma.com",
     "Engineering": "engineering@enicarpharma.com",
+    "Production": "production@enicarpharma.com",
+    "Store": "Stores@enicarpharma.com",
+    "PA-EHS": "Hr@enicarpharma.com",
+    "RA": "regulatory@enicarpharma.com",
 }
 
 

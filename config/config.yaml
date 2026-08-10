@@ -26,7 +26,10 @@ department_emails:
   Engineering:
     - "engineering@enicarpharma.com"
     - "enicarengineering@gmail.com"
-  "QA SOP": "qa@enicarpharma.com"      # SOP review reminders — QA only
+  Production: "production@enicarpharma.com"
+  Store: "Stores@enicarpharma.com"
+  PA-EHS: "Hr@enicarpharma.com"
+  RA: "regulatory@enicarpharma.com"
 
 # QA oversight: CC'd on every reminder to every department.
 # (Automatically skipped when the recipient IS QA — no self-duplication.)
@@ -38,15 +41,12 @@ admin_cc:
   - "mkverma@enicarpharma.com"
   - "nimishpatil@enicarpharma.com"
 
-# ---- QA SOP stream (its own cadence + routing) ------------------------------
-# SOP review reminders go to QA ONLY; on [CRITICAL], CC Swarali only (not the full
-# ADMIN list). Cadence is relative to the SOP due date: 3 days before, on the day,
-# the next day, then from +5 days it becomes [CRITICAL] and repeats every 3 days.
-sop_department: "QA SOP"
-sop_offset_planning: -3
-sop_offset_start: 0
-sop_offset_next: 1
-sop_offset_critical: 5
+# ---- SOP review reminders (planner_type = "SOP Review") ---------------------
+# Each SOP is routed to its OWNING department (Production/Store/etc.), with qa@ CC'd
+# for document-control oversight (via qa_oversight_cc above). Cadence relative to the
+# SOP review due date: 3 days before, on the day, the next day, then from +5 days it
+# becomes [CRITICAL] and repeats every 3 days. On [CRITICAL], CC Swarali ONLY (not
+# the full ADMIN list).
 sop_critical_cc:
   - "swaralisave@enicarpharma.com"
 
@@ -56,7 +56,8 @@ cadence_start_date: "2026-07-27"    # normal cadence begins here (grace week aft
 # One-time baseline sweep: one consolidated email per department listing all open
 # tasks, asking teams to confirm on the dashboard what is already complete.
 # Sent once (recorded in the sent-log); intended to run before cadence_start_date.
-baseline_sweep_enabled: true
+baseline_sweep_enabled: false   # the one-time sweep ran on 2026-07-19; keep off so newly
+                                # added departments (SOPs) don't get a baseline blast
 report_grace_days: 10               # report_due_date = due_date + 10 (informational;
                                     # the register column is authoritative)
 nag_interval_days: 3                # status/nag + escalation repeat interval

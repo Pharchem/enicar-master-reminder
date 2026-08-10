@@ -15,7 +15,7 @@ SPEC = ["task_id","department","planner_type","task_name","equipment_or_item_id"
         "last_done_date","action_done_date","action_status","report_done_date",
         "report_status","responsible_email","report_link","rescheduled_from",
         "reschedule_reason","remarks","source_file"]
-DEPTS = ["QA","QC","Micro","Engineering","QA SOP"]
+DEPTS = ["QA","QC","Micro","Engineering","Production","Store","PA-EHS","RA"]
 AUDIT_HEADER = ["timestamp_ist","task_id","department","action","field",
                 "old_value","new_value","reason","source","operator"]
 

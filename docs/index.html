@@ -214,11 +214,11 @@
   </div>
 </dialog>
 
-<script src="config.js?v=6"></script>
+<script src="config.js?v=7"></script>
 <script>
 const CFG = window.ENICAR_CONFIG || {};
-const ALL_DEPTS = ["QA","QC","Micro","Engineering","QA SOP"];
-// Only show departments that actually have tasks (QA SOP stays hidden until its data is added).
+const ALL_DEPTS = ["QA","QC","Micro","Engineering","Production","Store","PA-EHS","RA"];
+// Only show departments that actually have tasks (new SOP departments stay hidden until data exists).
 let DEPTS = ALL_DEPTS.slice();
 const ph = s => !s || s.indexOf("PASTE_") >= 0;
 const SHEET_URL = ph(CFG.SHEET_CSV_URL) ? CFG.SNAPSHOT_CSV : CFG.SHEET_CSV_URL;
@@ -260,7 +260,7 @@ function parseCSV(text){
 }
 
 const isHF  = t => (t.remarks||"").startsWith("HIGH_FREQ");
-const isSOP = t => (t.department||"")==="QA SOP";
+const isSOP = t => (t.planner_type||"")==="SOP Review";
 const aDone = t => (t.action_status||"").toLowerCase()==="done";
 const rDone = t => (t.report_status||"").toLowerCase()==="done";
 
