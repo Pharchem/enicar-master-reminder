@@ -25,7 +25,7 @@
 var MASTER_TAB = 'MASTER';
 var AUDIT_TAB = 'AuditLog';
 var TZ = 'Asia/Kolkata';
-var DEPTS = ['QA', 'QC', 'Micro', 'Engineering'];
+var DEPTS = ['QA', 'QC', 'Micro', 'Engineering', 'Production', 'Store', 'PA-EHS', 'RA'];
 
 // --- Department login (attribution) ---------------------------------------
 // Passwords are NOT in this code. Set them in Project Settings > Script
