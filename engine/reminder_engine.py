@@ -275,12 +275,14 @@ def compute_touches_for_row(row: dict, today: date, nag_n: int) -> list[Touch]:
                f"Time to perform {f['act']} {f['task']}{_eid(f)} ({f['dept']}) for "
                f"{month_name} ({'due after the 25th, by month-end' if after25 else 'due this month'}). "
                f"Do it and tick 'action completed' on the dashboard. Report due {f['rdue']}.{rn}")
-        elif start_day < today <= eom and every_n_after(today, start_day, nag_n):
+        elif ((today == eom) if after25 else
+              (start_day < today <= eom and every_n_after(today, start_day, nag_n))):
+            closes = "closes today (month-end)" if after25 else f"is due within {month_name}"
             mk("status_nag", False,
                f"[STATUS] {f['task']}{_eid(f)} — what's the status?",
-               f"Status check: {f['act']} {f['task']}{_eid(f)} ({f['dept']}) is due within "
-               f"{month_name} and is not yet ticked complete. Update the dashboard — or "
-               f"reschedule with a reason if it genuinely cannot be done this month.{rn}")
+               f"Status check: {f['act']} {f['task']}{_eid(f)} ({f['dept']}) {closes} and is "
+               f"not yet ticked complete. Perform it and update the dashboard — or reschedule "
+               f"with a reason if it genuinely cannot be done this month.{rn}")
         elif today > eom and every_n_after(today, eom, nag_n):
             n = (today - eom).days
             mk("action_critical", True,
