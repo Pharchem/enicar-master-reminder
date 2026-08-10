@@ -60,7 +60,12 @@ except ImportError:
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = ROOT / "config" / "config.yaml"
 PLACEHOLDER_TOKENS = ("PASTE_", "_HERE")
-DEPTS = ["QA", "QC", "Micro", "Engineering"]
+DEPTS = ["QA", "QC", "Micro", "Engineering", "QA SOP"]
+SOP_DEPT = "QA SOP"
+
+
+def is_sop(row: dict) -> bool:
+    return (row.get("department") or "").strip() == SOP_DEPT
 
 
 # --------------------------------------------------------------------------- #
@@ -217,6 +222,38 @@ def compute_touches_for_row(row: dict, today: date, nag_n: int) -> list[Touch]:
 
     def mk(ttype, critical, subject, body):
         out.append(Touch(tid, ttype, critical, subject, body, f["dept"], row))
+
+    # ---------------- QA SOP stream (its own cadence) -------------------------
+    # Reminders relative to the SOP due date: -3 (planning), 0 (start), +1 (next
+    # day), then from +5 it becomes [CRITICAL] and repeats every 3 days until the
+    # SOP is ticked reviewed. QA only; Swarali CC on the critical ones (routing is
+    # handled in recipients_for). An SOP is "done" as soon as action is ticked.
+    if is_sop(row):
+        if action_done(row):
+            return []
+        n = (today - due).days
+        if n == -3:
+            mk("planning", False,
+               f"[SOP] {f['task']}{_eid(f)} — review due {fmt_dmy(f['due'])}",
+               f"SOP {f['task']}{_eid(f)} is due for review in 3 days, on {fmt_dmy(f['due'])}. "
+               f"Please review/revise it and tick it done on the dashboard.{rn}")
+        elif n == 0:
+            mk("start", False,
+               f"[SOP] {f['task']}{_eid(f)} — review due today",
+               f"SOP {f['task']}{_eid(f)} is due for review today ({fmt_dmy(f['due'])}). "
+               f"Complete the review and tick it done on the dashboard.{rn}")
+        elif n == 1:
+            mk("status_nag", False,
+               f"[SOP] {f['task']}{_eid(f)} — was due yesterday",
+               f"SOP {f['task']}{_eid(f)} was due for review on {fmt_dmy(f['due'])} and is not "
+               f"yet ticked done. Please complete it and update the dashboard.{rn}")
+        elif n >= 5 and (n - 5) % 3 == 0:
+            mk("action_critical", True,
+               f"[CRITICAL] SOP overdue {n}d: {f['task']}{_eid(f)}",
+               f"SOP {f['task']}{_eid(f)} review was due {fmt_dmy(f['due'])} and is OVERDUE by "
+               f"{n} day(s) with no completion ticked. Complete it now and tick the dashboard, "
+               f"or log a reschedule with reason.{rn}")
+        return out
 
     # ---------------- report stream (action ticked, report pending) -----------
     if action_done(row):
@@ -383,6 +420,13 @@ def recipients_for(cfg: dict, dept: str, critical: bool) -> tuple[list[str], lis
     raw = cfg["department_emails"].get(dept, dept)
     tos = list(raw) if isinstance(raw, (list, tuple)) else [raw]
     cc: list[str] = []
+    # QA SOP is a QA-only chain: no oversight CC; on critical, CC Swarali only.
+    if dept == cfg.get("sop_department", "QA SOP"):
+        if critical:
+            for a in cfg.get("sop_critical_cc", []):
+                if not _is_placeholder(a) and a not in cc and a not in tos:
+                    cc.append(a)
+        return tos, cc
     qa_cc = cfg.get("qa_oversight_cc", "")
     if qa_cc and qa_cc not in tos:
         cc.append(qa_cc)

@@ -217,7 +217,9 @@
 <script src="config.js?v=6"></script>
 <script>
 const CFG = window.ENICAR_CONFIG || {};
-const DEPTS = ["QA","QC","Micro","Engineering"];
+const ALL_DEPTS = ["QA","QC","Micro","Engineering","QA SOP"];
+// Only show departments that actually have tasks (QA SOP stays hidden until its data is added).
+let DEPTS = ALL_DEPTS.slice();
 const ph = s => !s || s.indexOf("PASTE_") >= 0;
 const SHEET_URL = ph(CFG.SHEET_CSV_URL) ? CFG.SNAPSHOT_CSV : CFG.SHEET_CSV_URL;
 const AUDIT_URL = ph(CFG.AUDIT_CSV_URL) ? CFG.LOCAL_AUDIT : CFG.AUDIT_CSV_URL;
@@ -258,6 +260,7 @@ function parseCSV(text){
 }
 
 const isHF  = t => (t.remarks||"").startsWith("HIGH_FREQ");
+const isSOP = t => (t.department||"")==="QA SOP";
 const aDone = t => (t.action_status||"").toLowerCase()==="done";
 const rDone = t => (t.report_status||"").toLowerCase()==="done";
 
@@ -288,6 +291,7 @@ function applyOverlay(data){
 /* ------------------------------- classification ------------------------------------- */
 function classify(t){
   if(rDone(t)) return {bucket:"completed"};
+  if(isSOP(t) && aDone(t)) return {bucket:"completed"};   // SOP: reviewed = complete
   const due=parseISO(t.due_date);
   if(!due) return {bucket:"upcoming"};
   if(aDone(t)){
@@ -686,6 +690,9 @@ function pickDept(){
 }
 function paint(csvText){
   DATA=parseCSV(csvText);
+  // show only departments that actually have tasks (hides QA SOP until its data is added)
+  DEPTS=ALL_DEPTS.filter(d=>DATA.some(t=>t.department===d));
+  if(!DEPTS.length) DEPTS=["QA"];
   applyOverlay(DATA);
   updateLoginBar();
   pickDept();

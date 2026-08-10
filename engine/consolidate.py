@@ -15,7 +15,7 @@ SPEC = ["task_id","department","planner_type","task_name","equipment_or_item_id"
         "last_done_date","action_done_date","action_status","report_done_date",
         "report_status","responsible_email","report_link","rescheduled_from",
         "reschedule_reason","remarks","source_file"]
-DEPTS = ["QA","QC","Micro","Engineering"]
+DEPTS = ["QA","QC","Micro","Engineering","QA SOP"]
 AUDIT_HEADER = ["timestamp_ist","task_id","department","action","field",
                 "old_value","new_value","reason","source","operator"]
 
@@ -64,7 +64,8 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     _write(out / "MASTER_consolidated.csv", rows)
     for dep in DEPTS:
-        _write(out / f"{dep}.csv", [x for x in rows if x["department"] == dep])
+        fname = dep.replace(" ", "_") + ".csv"   # "QA SOP" -> QA_SOP.csv
+        _write(out / fname, [x for x in rows if x["department"] == dep])
     # refresh dashboard snapshot
     _write(ROOT / "docs" / "MASTER_consolidated.csv", rows)
 
