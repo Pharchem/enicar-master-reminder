@@ -112,12 +112,19 @@ function doPost(e) {
     var dept = String(row[col.department]);
     var today = todayIst_();
 
+    // SOP reviews are managed by QA (document control) from the QA box on the dashboard,
+    // even though their emails route to the owning department. So SOP ticks require the
+    // QA password (or ADMIN), not the owning department's password.
+    var isSopTask = ('planner_type' in col) &&
+                    String(row[col.planner_type]).trim() === 'SOP Review';
+    var authDept = isSopTask ? 'QA' : dept;
+
     // --- department login gate for every mutating action ---
     var MUTATING = { tick_action: 1, tick_report: 1, untick_action: 1,
                      untick_report: 1, reschedule: 1 };
     var operator = '';
     if (MUTATING[action]) {
-      var auth = checkAuth_(p, dept);
+      var auth = checkAuth_(p, authDept);
       if (!auth.ok) return json_({ ok: false, error: 'auth:' + auth.error });
       operator = auth.operator;
     }

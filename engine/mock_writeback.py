@@ -106,11 +106,13 @@ def handle(params: dict) -> dict:
         return {"ok": False, "error": f"task_id not found: {task_id}"}
     dept = hit["department"]
     today = today_ist()
+    # SOPs are managed by QA regardless of owning department (mirrors Code.gs)
+    auth_dept = "QA" if hit.get("planner_type") == "SOP Review" else dept
 
     MUTATING = {"tick_action","tick_report","untick_action","untick_report","reschedule"}
     operator = ""
     if action in MUTATING:
-        auth = _check_auth(params, dept)
+        auth = _check_auth(params, auth_dept)
         if not auth["ok"]:
             return {"ok": False, "error": "auth:" + auth["error"]}
         operator = auth["operator"]

@@ -214,7 +214,7 @@
   </div>
 </dialog>
 
-<script src="config.js?v=7"></script>
+<script src="config.js?v=8"></script>
 <script>
 const CFG = window.ENICAR_CONFIG || {};
 const ALL_DEPTS = ["QA","QC","Micro","Engineering","Production","Store","PA-EHS","RA"];
@@ -261,6 +261,9 @@ function parseCSV(text){
 
 const isHF  = t => (t.remarks||"").startsWith("HIGH_FREQ");
 const isSOP = t => (t.planner_type||"")==="SOP Review";
+// SOPs are shown in the QA box on the dashboard (QA/document-control manages them),
+// even though their emails route to the owning department (t.department).
+const tabDept = t => isSOP(t) ? "QA" : (t.department||"");
 const aDone = t => (t.action_status||"").toLowerCase()==="done";
 const rDone = t => (t.report_status||"").toLowerCase()==="done";
 
@@ -327,7 +330,7 @@ const SECTION_CAP=100;
 function render(){
   const sum=document.getElementById("summary");
   const stats=DEPTS.map(dep=>{
-    const rows=DATA.filter(t=>t.department===dep);
+    const rows=DATA.filter(t=>tabDept(t)===dep);
     let overdue=0,soon=0,rp=0;
     rows.forEach(t=>{const c=classify(t);
       if(c.bucket==="overdue")overdue++;
@@ -357,7 +360,7 @@ function render(){
       +`</div>`;
   } else watch.innerHTML="";
 
-  let rows=DATA.filter(t=>t.department===activeDept);
+  let rows=DATA.filter(t=>tabDept(t)===activeDept);
   if(SEARCH) rows=rows.filter(t=>
     (t.task_name+" "+t.equipment_or_item_id+" "+(t.activity_type||"")).toLowerCase().includes(SEARCH));
   const byBucket={}; BUCKETS.forEach(b=>byBucket[b.key]=[]);
@@ -434,7 +437,8 @@ function taskRow(t,bucket){
   const od=bucket==="overdue"?`<span class="odchip">${c.overdueDays}d ${c.report?"report ":""}overdue</span>`:"";
   const rp=aDone(t)&&!rDone(t)?`<span class="rpchip">report due ${esc(fmtLong(t.report_due_date))}</span>`:"";
   const rsN=RESCHED[t.task_id]||0;
-  const flags=(rsN?`<span class="pill ${rsN>=2?'flag':''}">rescheduled ${rsN}×</span>`:"")+
+  const flags=(isSOP(t)?`<span class="pill flag">SOP · ${esc(t.department)}</span>`:"")+
+    (rsN?`<span class="pill ${rsN>=2?'flag':''}">rescheduled ${rsN}×</span>`:"")+
     (t.due_type==="month_window"?`<span class="pill">any day that month</span>`:"")+
     (t.rescheduled_from?`<span class="pill">was ${esc(fmtLong(t.rescheduled_from))}</span>`:"");
   const link=(t.report_link||"").trim();
@@ -589,7 +593,7 @@ async function onAction(btn){
   const t=DATA.find(x=>x.task_id===id); if(!t) return;
   const rowEl=document.getElementById("row-"+CSS.escape(id));
   // require a valid department sign-in before any write
-  try{ await ensureLogin(t.department); }
+  try{ await ensureLogin(isSOP(t) ? "QA" : t.department); }
   catch(e){ if(e!=="cancel"&&e!=="dept") toast("Sign-in needed to update tasks.","bad"); return; }
 
   if(act==="tick_action"){
@@ -682,8 +686,8 @@ function setSrc(note){
 }
 function nowHM(){ return new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}); }
 function pickDept(){
-  if(!DEPTS.includes(activeDept)||!DATA.some(t=>t.department===activeDept)){
-    const worst=DEPTS.map(d=>[d,DATA.filter(t=>t.department===d&&classify(t).bucket==="overdue").length])
+  if(!DEPTS.includes(activeDept)||!DATA.some(t=>tabDept(t)===activeDept)){
+    const worst=DEPTS.map(d=>[d,DATA.filter(t=>tabDept(t)===d&&classify(t).bucket==="overdue").length])
       .sort((a,b)=>b[1]-a[1])[0];
     activeDept=worst?worst[0]:"QA";
   }
@@ -691,7 +695,7 @@ function pickDept(){
 function paint(csvText){
   DATA=parseCSV(csvText);
   // show only departments that actually have tasks (hides QA SOP until its data is added)
-  DEPTS=ALL_DEPTS.filter(d=>DATA.some(t=>t.department===d));
+  DEPTS=ALL_DEPTS.filter(d=>DATA.some(t=>tabDept(t)===d));
   if(!DEPTS.length) DEPTS=["QA"];
   applyOverlay(DATA);
   updateLoginBar();
