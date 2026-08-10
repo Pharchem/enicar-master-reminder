@@ -133,6 +133,18 @@ def fmt_dmy(iso: str) -> str:
     return f"{d.day:02d} {_MON[d.month - 1]} {d.year}" if d else (iso or "")
 
 
+def window_start(row: dict, due: date) -> date:
+    """The first day a month-window task should be started.
+    Monthly QC tasks are performed after the 25th, so their window opens on the 25th;
+    quarterly / half-yearly month-window tasks open on the 1st. An explicit day already
+    stored in due_date (>1) is respected as-is."""
+    if due.day > 1:
+        return due
+    if (row.get("frequency") or "").strip().lower() == "monthly":
+        return date(due.year, due.month, 25)
+    return date(due.year, due.month, 1)
+
+
 def every_n_after(today: date, anchor: date, n: int) -> bool:
     """True when `today` is anchor+n, anchor+2n, ... (strictly after anchor)."""
     delta = (today - anchor).days
@@ -247,20 +259,23 @@ def compute_touches_for_row(row: dict, today: date, nag_n: int) -> list[Touch]:
     if row.get("due_type") == "month_window":
         first = date(due.year, due.month, 1)
         eom = last_day_of_month(first)
+        start_day = window_start(row, due)
         month_name = first.strftime("%B %Y")
-        if today == first - timedelta(days=3):
+        after25 = start_day.day >= 25
+        opens = "after the 25th" if after25 else "on the 1st"
+        if today == start_day - timedelta(days=3):
             mk("planning", False,
                f"[PLANNING] {f['task']}{_eid(f)} — due in {month_name}",
                f"{f['act'].capitalize()} {f['task']}{_eid(f)} ({f['dept']}) is due in "
-               f"{month_name}. Plan it now; the window opens on the 1st. Report due "
+               f"{month_name} — perform it {opens}. Plan it now. Report due "
                f"{f['rdue']}.{rn}")
-        elif today == first:
+        elif today == start_day:
             mk("start", False,
                f"[START] {f['task']}{_eid(f)} — {month_name} window open",
-               f"The {month_name} window is open for {f['act']} {f['task']}{_eid(f)} "
-               f"({f['dept']}). Begin now; tick 'action completed' on the dashboard when done. "
-               f"Report due {f['rdue']}.{rn}")
-        elif today <= eom and every_n_after(today, first, nag_n):
+               f"Time to perform {f['act']} {f['task']}{_eid(f)} ({f['dept']}) for "
+               f"{month_name} ({'due after the 25th, by month-end' if after25 else 'due this month'}). "
+               f"Do it and tick 'action completed' on the dashboard. Report due {f['rdue']}.{rn}")
+        elif start_day < today <= eom and every_n_after(today, start_day, nag_n):
             mk("status_nag", False,
                f"[STATUS] {f['task']}{_eid(f)} — what's the status?",
                f"Status check: {f['act']} {f['task']}{_eid(f)} ({f['dept']}) is due within "

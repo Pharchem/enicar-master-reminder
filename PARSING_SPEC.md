@@ -66,3 +66,14 @@ register in place to the live v3 schema (adds report_due_date = due+10 — month
 tasks: month-end+10 — splits done/status into action_*/report_*, adds rescheduled_from /
 reschedule_reason, and fills real department emails). Always run migrate_v3.py then
 engine/consolidate.py after re-parsing.
+
+## Monthly QC month-window rule (2026-08-07, director instruction)
+
+QC calibration tasks marked **Monthly** are performed **after the 25th** of the month.
+The engine and dashboard therefore open a monthly month-window task's reminder cycle on
+the **25th** (planning on the 22nd, start on the 25th, status nag through month-end,
+`[CRITICAL]` only after month-end). Quarterly / half-yearly month-window tasks still open
+on the 1st. This is a logic rule keyed on `due_type=month_window` + `frequency=monthly`
+(see `window_start()` in reminder_engine.py and `windowStart()` in docs/index.html) — it
+needs no change to stored due dates or task_ids, so the live Sheet and existing ticks are
+untouched.
