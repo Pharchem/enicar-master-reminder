@@ -32,7 +32,7 @@ DEPT_EMAIL = {
     "Micro": "micro@enicarpharma.com",
     "Engineering": "engineering@enicarpharma.com",
     "Production": "production@enicarpharma.com",
-    "Store": "Stores@enicarpharma.com",
+    "Store": "store@enicarpharma.com",
     "PA-EHS": "Hr@enicarpharma.com",
     "RA": "regulatory@enicarpharma.com",
 }

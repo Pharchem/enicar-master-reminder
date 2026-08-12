@@ -27,7 +27,7 @@ department_emails:
     - "engineering@enicarpharma.com"
     - "enicarengineering@gmail.com"
   Production: "production@enicarpharma.com"
-  Store: "Stores@enicarpharma.com"
+  Store: "store@enicarpharma.com"
   PA-EHS: "Hr@enicarpharma.com"
   RA: "regulatory@enicarpharma.com"
 
