@@ -214,7 +214,7 @@
   </div>
 </dialog>
 
-<script src="config.js?v=8"></script>
+<script src="config.js?v=9"></script>
 <script>
 const CFG = window.ENICAR_CONFIG || {};
 const ALL_DEPTS = ["QA","QC","Micro","Engineering","Production","Store","PA-EHS","RA"];
@@ -292,12 +292,19 @@ function applyOverlay(data){
 }
 
 /* ------------------------------- classification ------------------------------------- */
+const CHASE_FROM = parseISO(CFG.REPORT_CHASE_FROM||"") ;
+// Pre-dashboard history: due before go-live, action ticked during the baseline backfill,
+// report never filed in the system. Accepted as-is — not chased, not counted as overdue.
+const isPreSystem = t => !!(CHASE_FROM && aDone(t) && !rDone(t)
+                            && parseISO(t.due_date) && parseISO(t.due_date) < CHASE_FROM);
+
 function classify(t){
   if(rDone(t)) return {bucket:"completed"};
   if(isSOP(t) && aDone(t)) return {bucket:"completed"};   // SOP: reviewed = complete
   const due=parseISO(t.due_date);
   if(!due) return {bucket:"upcoming"};
   if(aDone(t)){
+    if(isPreSystem(t)) return {bucket:"presystem",report:true};
     const rdue=parseISO(t.report_due_date)||due;
     const od=days(TODAY,rdue);
     if(od>0) return {bucket:"overdue",overdueDays:od,report:true};
@@ -320,6 +327,8 @@ const BUCKETS=[
   {key:"month",    label:"Due this month",      cls:"b-amber", chip:"f-amber"},
   {key:"upcoming", label:"Upcoming (90 days)",  cls:"b-blue",  chip:""},
   {key:"later",    label:"Later",               cls:"b-blue",  chip:""},
+  {key:"presystem",label:"Pre-dashboard history (report not filed — not chased)",
+                                                cls:"b-blue",  chip:""},
   {key:"completed",label:"Completed",           cls:"b-green", chip:"f-green"},
 ];
 
@@ -335,7 +344,7 @@ function render(){
     rows.forEach(t=>{const c=classify(t);
       if(c.bucket==="overdue")overdue++;
       if(c.bucket==="month"||c.bucket==="week")soon++;
-      if(aDone(t)&&!rDone(t))rp++;});
+      if(aDone(t)&&!rDone(t)&&!isPreSystem(t))rp++;});   // exclude accepted pre-dashboard history
     return {dep,overdue,soon,rp,total:rows.length};
   }).sort((a,b)=>b.overdue-a.overdue);
   sum.innerHTML=stats.map(s=>`
@@ -379,7 +388,7 @@ function render(){
     if(!items.length) continue;
     const hf=items.filter(isHF), norm=items.filter(t=>!isHF(t));
     norm.sort((x,y)=>(parseISO(x.due_date)-parseISO(y.due_date))||0);
-    const collapsed=(activeFilter==="all" && (b.key==="later"||b.key==="completed"||b.key==="upcoming"))?"collapsed":"";
+    const collapsed=(activeFilter==="all" && (b.key==="later"||b.key==="completed"||b.key==="upcoming"||b.key==="presystem"))?"collapsed":"";
     let headExtra="";
     if(b.key==="completed"){
       const noLink=items.filter(t=>!(t.report_link||"").trim()).length;
@@ -438,6 +447,7 @@ function taskRow(t,bucket){
   const rp=aDone(t)&&!rDone(t)?`<span class="rpchip">report due ${esc(fmtLong(t.report_due_date))}</span>`:"";
   const rsN=RESCHED[t.task_id]||0;
   const flags=(isSOP(t)?`<span class="pill flag">SOP · ${esc(t.department)}</span>`:"")+
+    (isPreSystem(t)?`<span class="pill">pre-dashboard</span>`:"")+
     (rsN?`<span class="pill ${rsN>=2?'flag':''}">rescheduled ${rsN}×</span>`:"")+
     (t.due_type==="month_window"?`<span class="pill">any day that month</span>`:"")+
     (t.rescheduled_from?`<span class="pill">was ${esc(fmtLong(t.rescheduled_from))}</span>`:"");

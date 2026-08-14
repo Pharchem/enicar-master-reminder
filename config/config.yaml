@@ -58,6 +58,15 @@ cadence_start_date: "2026-07-27"    # normal cadence begins here (grace week aft
 # Sent once (recorded in the sent-log); intended to run before cadence_start_date.
 baseline_sweep_enabled: false   # the one-time sweep ran on 2026-07-19; keep off so newly
                                 # added departments (SOPs) don't get a baseline blast
+# Report chasing starts from the dashboard go-live. Tasks that were DUE before this date
+# are pre-system history: teams backfilled "action done" during the baseline sweep without
+# filing reports in the system, and the director has accepted those as-is. They are still
+# visible on the dashboard (marked "pre-dashboard") but generate NO report reminders.
+# Tasks due on/after this date must have both the action AND the report ticked.
+# NOTE: overdue ACTIONS are always chased, whatever the date — a task never performed is
+# a real compliance gap.
+report_chase_from: "2026-07-19"
+
 report_grace_days: 10               # report_due_date = due_date + 10 (informational;
                                     # the register column is authoritative)
 nag_interval_days: 3                # status/nag + escalation repeat interval

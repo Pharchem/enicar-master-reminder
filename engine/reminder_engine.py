@@ -206,7 +206,18 @@ def _resched_note(row: dict) -> str:
             + (f" (reason: {reason})" if reason else "") + ".")
 
 
-def compute_touches_for_row(row: dict, today: date, nag_n: int) -> list[Touch]:
+def is_pre_system(row: dict, chase_from: date | None) -> bool:
+    """True for tasks that were DUE before the dashboard went live. Their reports were
+    never filed through the system (backfilled during the baseline sweep) and are
+    accepted as-is, so they are not report-chased."""
+    if chase_from is None:
+        return False
+    due = parse_iso(row.get("due_date", ""))
+    return bool(due and due < chase_from)
+
+
+def compute_touches_for_row(row: dict, today: date, nag_n: int,
+                            chase_from: date | None = None) -> list[Touch]:
     """Touches firing for one task row on `today` (normal cadence only —
     the baseline sweep is computed separately)."""
     if report_done(row):
@@ -256,6 +267,9 @@ def compute_touches_for_row(row: dict, today: date, nag_n: int) -> list[Touch]:
 
     # ---------------- report stream (action ticked, report pending) -----------
     if action_done(row):
+        # Pre-dashboard history: accepted as-is, never report-chased (director decision).
+        if is_pre_system(row, chase_from):
+            return out
         rdue = parse_iso(row.get("report_due_date", "")) or (due + timedelta(days=10))
         anchor = parse_iso(row.get("action_done_date", "")) or rdue
         overdue_report = today > rdue
@@ -622,6 +636,7 @@ def run(as_of: date | None = None, dry_run: bool | None = None,
     if sentlog_path is None:
         sentlog_path = ROOT / "sent-log" / "sent_log.csv"
     cadence_start = parse_iso(str(cfg.get("cadence_start_date", ""))) or date(2026, 7, 20)
+    chase_from = parse_iso(str(cfg.get("report_chase_from", "")))
 
     rows = rows_override if rows_override is not None else load_rows(cfg, dry_run)
     seen = load_sentlog(sentlog_path)
@@ -631,7 +646,7 @@ def run(as_of: date | None = None, dry_run: bool | None = None,
         touches.extend(baseline_touches(rows, seen, cadence_start))
     if today >= cadence_start:
         for row in rows:
-            touches.extend(compute_touches_for_row(row, today, nag_n))
+            touches.extend(compute_touches_for_row(row, today, nag_n, chase_from))
 
     fresh = [t for t in touches
              if (today.isoformat(), t.task_id, t.touch_type) not in seen]
