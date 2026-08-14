@@ -536,29 +536,43 @@ def build_messages(cfg: dict, touches: list[Touch], today: date) -> list[dict]:
     for t in normal:
         by_dept.setdefault(t.department, []).append(t)
     for dept, ts in sorted(by_dept.items()):
-        overdue = sorted([t for t in ts if t.critical],
-                         key=lambda x: x.row.get("due_date", ""))
-        reports = [t for t in ts if not t.critical and t.touch_type == "report_chaser"]
-        upcoming = sorted([t for t in ts if not t.critical and t.touch_type != "report_chaser"],
-                          key=lambda x: x.row.get("due_date", ""))
-        has_crit = bool(overdue)
+        # Keep "task not done" and "report not filed" clearly separate — an overdue
+        # REPORT means the work was done, only the record is missing.
+        by_due = lambda x: x.row.get("due_date", "")
+        overdue = sorted([t for t in ts if t.touch_type == "action_critical"], key=by_due)
+        rep_over = sorted([t for t in ts if t.touch_type == "report_critical"], key=by_due)
+        reports = [t for t in ts if t.touch_type == "report_chaser"]
+        upcoming = sorted([t for t in ts if not t.critical
+                           and t.touch_type not in ("report_chaser", "report_critical")],
+                          key=by_due)
+        has_crit = bool(overdue or rep_over)
         to, cc = recipients_for(cfg, dept, critical=has_crit)
 
+        bits = []
+        if overdue:
+            bits.append(f"{len(overdue)} overdue")
+        if rep_over:
+            bits.append(f"{len(rep_over)} report{'s' if len(rep_over) != 1 else ''} overdue")
+        if upcoming or reports:
+            bits.append(f"{len(upcoming) + len(reports)} to plan")
         subj = (f"{'[CRITICAL] ' if has_crit else ''}{dept} tasks — "
-                f"{len(overdue)} overdue, {len(upcoming) + len(reports)} to plan — "
-                f"{fmt_dmy(today.isoformat())}")
+                f"{', '.join(bits) if bits else 'update'} — {fmt_dmy(today.isoformat())}")
 
         intro = [f"Good morning, {dept} team.",
                  f"Here is your task status for {fmt_dmy(today.isoformat())}:",
-                 f"  • {len(overdue)} overdue (need action now)",
+                 f"  • {len(overdue)} task(s) overdue — not yet performed",
+                 f"  • {len(rep_over)} report(s) overdue — task done, report not filed",
                  f"  • {len(upcoming)} coming up / in progress",
-                 f"  • {len(reports)} completed but report still to be filed", ""]
+                 f"  • {len(reports)} report(s) due soon", ""]
         body = "\n".join(intro)
-        body += _section("OVERDUE — please complete and tick on the dashboard:", overdue, today)
+        body += _section("OVERDUE TASKS — perform and tick 'Action done':", overdue, today)
         body += ("\n" if overdue else "") + _section(
+            "OVERDUE REPORTS — the task is done; file the report and tick 'Report done':",
+            rep_over, today)
+        body += ("\n" if rep_over else "") + _section(
             "COMING UP / IN PROGRESS:", upcoming, today)
         body += ("\n" if upcoming else "") + _section(
-            "REPORTS TO FILE (task done, report pending):", reports, today)
+            "REPORTS DUE SOON (task done, report pending):", reports, today)
         body += _dashboard_footer(cfg)
 
         msgs.append({"to": to, "cc": cc, "subject": subj, "body": body,
