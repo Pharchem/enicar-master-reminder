@@ -67,6 +67,17 @@ function checkAuth_(p, taskDept) {
   return { ok: true, operator: operator, dept: login };
 }
 
+// Decommissioning removes a task from compliance tracking, so it is ADMIN-only
+// (departments report the change; the Director records it). Requires PWD_ADMIN.
+function checkAdmin_(p) {
+  var pwd = String(p.pwd || '');
+  var operator = String(p.operator || '').trim();
+  if (!operator) return { ok: false, error: 'operator_required' };
+  var admin = adminPwd_();
+  if (!admin || pwd !== admin) return { ok: false, error: 'admin_only' };
+  return { ok: true, operator: operator };
+}
+
 function doGet(e) {
   var p = (e && e.parameter) || {};
   if (p.action === 'health') {
@@ -122,8 +133,13 @@ function doPost(e) {
     // --- department login gate for every mutating action ---
     var MUTATING = { tick_action: 1, tick_report: 1, untick_action: 1,
                      untick_report: 1, reschedule: 1 };
+    var ADMIN_ONLY = { decommission: 1, recommission: 1 };
     var operator = '';
-    if (MUTATING[action]) {
+    if (ADMIN_ONLY[action]) {
+      var aAuth = checkAdmin_(p);
+      if (!aAuth.ok) return json_({ ok: false, error: 'auth:' + aAuth.error });
+      operator = aAuth.operator;
+    } else if (MUTATING[action]) {
       var auth = checkAuth_(p, authDept);
       if (!auth.ok) return json_({ ok: false, error: 'auth:' + auth.error });
       operator = auth.operator;
@@ -183,6 +199,33 @@ function doPost(e) {
       audit_(ss, taskId, dept, 'untick_report', 'report_status', 'done', 'pending',
              urReason, 'dashboard', operator);
       return json_({ ok: true, task_id: taskId, report_status: 'pending' });
+    }
+
+    if (action === 'decommission') {
+      if (!('decommissioned' in col)) {
+        return json_({ ok: false, error: 'the MASTER tab needs a "decommissioned" column' });
+      }
+      var dReason = String(p.reason || '').trim();
+      if (!dReason) return json_({ ok: false, error: 'a reason is required to decommission' });
+      var wasD = String(row[col.decommissioned] || '').trim();
+      if (wasD) return json_({ ok: true, noop: true, message: 'already decommissioned' });
+      setCell('decommissioned', dReason);
+      audit_(ss, taskId, dept, 'decommission', 'decommissioned', '', dReason,
+             dReason, 'dashboard', operator);
+      return json_({ ok: true, task_id: taskId, decommissioned: dReason });
+    }
+
+    if (action === 'recommission') {
+      if (!('decommissioned' in col)) {
+        return json_({ ok: false, error: 'the MASTER tab needs a "decommissioned" column' });
+      }
+      var prevD = String(row[col.decommissioned] || '').trim();
+      if (!prevD) return json_({ ok: true, noop: true, message: 'not decommissioned' });
+      var rcReason = String(p.reason || '').trim();
+      setCell('decommissioned', '');
+      audit_(ss, taskId, dept, 'recommission', 'decommissioned', prevD, '',
+             rcReason, 'dashboard', operator);
+      return json_({ ok: true, task_id: taskId, decommissioned: '' });
     }
 
     if (action === 'reschedule') {

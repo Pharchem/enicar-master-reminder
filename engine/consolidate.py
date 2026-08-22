@@ -14,7 +14,7 @@ SPEC = ["task_id","department","planner_type","task_name","equipment_or_item_id"
         "activity_type","frequency","due_type","due_date","report_due_date",
         "last_done_date","action_done_date","action_status","report_done_date",
         "report_status","responsible_email","report_link","rescheduled_from",
-        "reschedule_reason","remarks","source_file"]
+        "reschedule_reason","remarks","source_file","decommissioned"]
 DEPTS = ["QA","QC","Micro","Engineering","Production","Store","PA-EHS","RA"]
 AUDIT_HEADER = ["timestamp_ist","task_id","department","action","field",
                 "old_value","new_value","reason","source","operator"]
@@ -44,9 +44,13 @@ def main():
     for f in files:
         with open(f, newline="") as fh:
             r = csv.DictReader(fh)
-            if r.fieldnames != SPEC:
+            # 'decommissioned' is a later addition — registers written before it are fine.
+            if r.fieldnames != SPEC and r.fieldnames != SPEC[:-1]:
                 raise SystemExit(f"SCHEMA MISMATCH in {f.name}: {r.fieldnames}")
-            rows.extend(dict(x) for x in r)
+            for x in r:
+                d = dict(x)
+                d.setdefault("decommissioned", "")
+                rows.append(d)
 
     # normalize typographic punctuation to ASCII in every text field
     for x in rows:

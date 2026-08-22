@@ -214,7 +214,7 @@
   </div>
 </dialog>
 
-<script src="config.js?v=9"></script>
+<script src="config.js?v=10"></script>
 <script>
 const CFG = window.ENICAR_CONFIG || {};
 const ALL_DEPTS = ["QA","QC","Micro","Engineering","Production","Store","PA-EHS","RA"];
@@ -279,6 +279,8 @@ function applyOverlay(data){
     const fresh=Date.now()-(p.ts||0) < OVERLAY_TTL;
     if(!t || !fresh){ delete o[id]; changed=true; continue; }
     let sheetCaughtUp=true;
+    if(p.decommissioned && !isDecomm(t)){ t.decommissioned=p.decommissioned; sheetCaughtUp=false; }
+    if(p.recommission && isDecomm(t)){ t.decommissioned=""; sheetCaughtUp=false; }
     if(p.undo_action && aDone(t)){ t.action_status="pending"; t.action_done_date=""; sheetCaughtUp=false; }
     if(p.undo_report && rDone(t)){ t.report_status="pending"; t.report_done_date=""; sheetCaughtUp=false; }
     if(p.action_done_date && !aDone(t)){ t.action_status="done"; t.action_done_date=p.action_done_date; sheetCaughtUp=false; }
@@ -295,10 +297,12 @@ function applyOverlay(data){
 const CHASE_FROM = parseISO(CFG.REPORT_CHASE_FROM||"") ;
 // Pre-dashboard history: due before go-live, action ticked during the baseline backfill,
 // report never filed in the system. Accepted as-is — not chased, not counted as overdue.
+const isDecomm = t => !!((t.decommissioned||"").trim());
 const isPreSystem = t => !!(CHASE_FROM && aDone(t) && !rDone(t)
                             && parseISO(t.due_date) && parseISO(t.due_date) < CHASE_FROM);
 
 function classify(t){
+  if(isDecomm(t)) return {bucket:"decommissioned"};
   if(rDone(t)) return {bucket:"completed"};
   if(isSOP(t) && aDone(t)) return {bucket:"completed"};   // SOP: reviewed = complete
   const due=parseISO(t.due_date);
@@ -330,6 +334,8 @@ const BUCKETS=[
   {key:"presystem",label:"Pre-dashboard history (report not filed — not chased)",
                                                 cls:"b-blue",  chip:""},
   {key:"completed",label:"Completed",           cls:"b-green", chip:"f-green"},
+  {key:"decommissioned",label:"Decommissioned (retired from tracking)",
+                                                cls:"b-blue",  chip:""},
 ];
 
 let DATA=[], RESCHED={}, activeDept="QA", activeFilter="all", showHF={}, showAll={}, SEARCH="";
@@ -388,7 +394,7 @@ function render(){
     if(!items.length) continue;
     const hf=items.filter(isHF), norm=items.filter(t=>!isHF(t));
     norm.sort((x,y)=>(parseISO(x.due_date)-parseISO(y.due_date))||0);
-    const collapsed=(activeFilter==="all" && (b.key==="later"||b.key==="completed"||b.key==="upcoming"||b.key==="presystem"))?"collapsed":"";
+    const collapsed=(activeFilter==="all" && (b.key==="later"||b.key==="completed"||b.key==="upcoming"||b.key==="presystem"||b.key==="decommissioned"))?"collapsed":"";
     let headExtra="";
     if(b.key==="completed"){
       const noLink=items.filter(t=>!(t.report_link||"").trim()).length;
@@ -447,6 +453,7 @@ function taskRow(t,bucket){
   const rp=aDone(t)&&!rDone(t)?`<span class="rpchip">report due ${esc(fmtLong(t.report_due_date))}</span>`:"";
   const rsN=RESCHED[t.task_id]||0;
   const flags=(isSOP(t)?`<span class="pill flag">SOP · ${esc(t.department)}</span>`:"")+
+    (isDecomm(t)?`<span class="pill flag">retired: ${esc(t.decommissioned)}</span>`:"")+
     (isPreSystem(t)?`<span class="pill">pre-dashboard</span>`:"")+
     (rsN?`<span class="pill ${rsN>=2?'flag':''}">rescheduled ${rsN}×</span>`:"")+
     (t.due_type==="month_window"?`<span class="pill">any day that month</span>`:"")+
@@ -456,7 +463,10 @@ function taskRow(t,bucket){
     ? `<a class="chip-link" href="${esc(link)}" target="_blank" rel="noopener noreferrer">📎 View report</a>`
     : `<span class="chip-nolink">no report link</span>`;
   let controls;
-  if(rDone(t)){
+  if(isDecomm(t)){
+    controls=`<span class="done-note" style="color:var(--muted)">\u2298 Retired</span>
+      <button class="rs" data-act="recommission" data-id="${id}">\u21ba Restore</button>`;
+  } else if(rDone(t)){
     controls=`<span class="done-note">✔ Completed ${esc(fmtLong(t.report_done_date||t.action_done_date||""))}</span>
       ${evidence}
       <button class="rs undo" data-act="untick_report" data-id="${id}">↺ Undo</button>`;
@@ -466,7 +476,8 @@ function taskRow(t,bucket){
                  <button class="rs undo" data-act="untick_action" data-id="${id}">↺ Undo</button>`
                :`<button class="act" data-act="tick_action" data-id="${id}">✓ Action done</button>`)+
       `<button class="rep" data-act="tick_report" data-id="${id}">✓ Report done</button>`+
-      `<button class="rs" data-act="reschedule" data-id="${id}">↦ Reschedule</button>`;
+      `<button class="rs" data-act="reschedule" data-id="${id}">↦ Reschedule</button>`+
+      `<button class="rs" data-act="decommission" data-id="${id}" title="Director only — retire this task from tracking">\u2298</button>`;
   }
   return `<div class="task" id="row-${id}">
     ${dueBadge(t,bucket)}
@@ -487,10 +498,11 @@ function toast(msg,kind){
   clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.remove(),4200);
 }
 
-const MUTATING=["tick_action","tick_report","untick_action","untick_report","reschedule"];
+const MUTATING=["tick_action","tick_report","untick_action","untick_report","reschedule","decommission","recommission"];
 const AUTH_MSG={login_required:"Please sign in first.",operator_required:"Enter your name.",
   bad_login:"Unknown department.",bad_password:"Wrong password.",
   wrong_department:"That password is for another department — sign in as the task's department.",
+  admin_only:"Only the Director (admin password) can decommission or restore a task.",
   expired:"Session ended — please sign in again."};
 function authMsg(code){ return AUTH_MSG[code]||("Login problem ("+code+")."); }
 
@@ -615,6 +627,29 @@ async function onAction(btn){
       toast("✓ Saved to the Sheet and audit-logged.","ok"); render();
     }catch(e){
       rowEl&&rowEl.classList.remove("saving"); btn.disabled=false; btn.textContent="✓ Action done";
+      toast("✗ Not saved: "+e.message,"bad");
+    }
+  }
+
+  if(act==="decommission" || act==="recommission"){
+    const retiring = act==="decommission";
+    const msg = retiring
+      ? "Retire this task from compliance tracking (e.g. equipment decommissioned).\n\nReason (required — recorded in the audit log):"
+      : "Restore this task to tracking.\n\nReason (optional):";
+    const reason = prompt(msg, "");
+    if(reason===null) return;
+    if(retiring && !reason.trim()){ toast("A reason is required to decommission.","bad"); return; }
+    rowEl&&rowEl.classList.add("saving");
+    try{
+      await postWB({action:act, task_id:id, reason:reason.trim()});
+      if(retiring){ t.decommissioned=reason.trim(); setPending(id,{decommissioned:reason.trim()}); }
+      else { t.decommissioned=""; setPending(id,{recommission:true}); }
+      toast(retiring
+        ? "⊘ Retired from tracking — reminders stop; the task stays on record with the reason."
+        : "↺ Restored to tracking — reminders resume.","ok");
+      render();
+    }catch(e){
+      rowEl&&rowEl.classList.remove("saving");
       toast("✗ Not saved: "+e.message,"bad");
     }
   }

@@ -206,6 +206,12 @@ def _resched_note(row: dict) -> str:
             + (f" (reason: {reason})" if reason else "") + ".")
 
 
+def is_decommissioned(row: dict) -> bool:
+    """Task retired from compliance tracking (equipment removed, SOP withdrawn...).
+    The row stays in the register with the reason, but generates no reminders."""
+    return bool((row.get("decommissioned") or "").strip())
+
+
 def is_pre_system(row: dict, chase_from: date | None) -> bool:
     """True for tasks that were DUE before the dashboard went live. Their reports were
     never filed through the system (backfilled during the baseline sweep) and are
@@ -220,6 +226,8 @@ def compute_touches_for_row(row: dict, today: date, nag_n: int,
                             chase_from: date | None = None) -> list[Touch]:
     """Touches firing for one task row on `today` (normal cadence only —
     the baseline sweep is computed separately)."""
+    if is_decommissioned(row):
+        return []                       # retired from tracking: no reminders
     if report_done(row):
         return []                       # fully closed: emails stop
     due = parse_iso(row.get("due_date", ""))

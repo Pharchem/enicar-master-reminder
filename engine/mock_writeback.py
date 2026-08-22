@@ -110,8 +110,15 @@ def handle(params: dict) -> dict:
     auth_dept = "QA" if hit.get("planner_type") == "SOP Review" else dept
 
     MUTATING = {"tick_action","tick_report","untick_action","untick_report","reschedule"}
+    ADMIN_ONLY = {"decommission","recommission"}
     operator = ""
-    if action in MUTATING:
+    if action in ADMIN_ONLY:
+        operator = params.get("operator", [""])[0].strip()
+        if not operator:
+            return {"ok": False, "error": "auth:operator_required"}
+        if params.get("pwd", [""])[0] != MOCK_ADMIN:
+            return {"ok": False, "error": "auth:admin_only"}
+    elif action in MUTATING:
         auth = _check_auth(params, auth_dept)
         if not auth["ok"]:
             return {"ok": False, "error": "auth:" + auth["error"]}
@@ -149,6 +156,21 @@ def handle(params: dict) -> dict:
         hit["report_done_date"] = ""
         hit["report_status"] = "pending"
         audit(task_id, dept, "untick_report", "report_status", "done", "pending", reason, "dashboard", operator)
+    elif action == "decommission":
+        reason = params.get("reason", [""])[0].strip()
+        if not reason:
+            return {"ok": False, "error": "a reason is required to decommission"}
+        if hit.get("decommissioned","").strip():
+            return {"ok": True, "noop": True, "message": "already decommissioned"}
+        hit["decommissioned"] = reason
+        audit(task_id, dept, "decommission", "decommissioned", "", reason, reason, "dashboard", operator)
+    elif action == "recommission":
+        prev = hit.get("decommissioned","").strip()
+        if not prev:
+            return {"ok": True, "noop": True, "message": "not decommissioned"}
+        reason = params.get("reason", [""])[0].strip()
+        hit["decommissioned"] = ""
+        audit(task_id, dept, "recommission", "decommissioned", prev, "", reason, "dashboard", operator)
     elif action == "reschedule":
         new_due = params.get("new_due_date", [""])[0].strip()
         reason = params.get("reason", [""])[0].strip()
