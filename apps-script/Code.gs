@@ -33,16 +33,22 @@ var DEPTS = ['QA', 'QC', 'Micro', 'Engineering', 'Production', 'Store', 'PA-EHS'
 // PWD_ADMIN, which may act on ANY department — for QA oversight / the Director).
 // See SETUP.md. A department's own password may only tick that department's
 // tasks; every tick/reschedule records the operator name in the audit log.
+// Passwords are compared trimmed: a stray space or newline pasted into Script
+// Properties (or typed on a phone keyboard) must not silently break sign-in.
 function deptPwd_(dept) {
-  return String(PropertiesService.getScriptProperties().getProperty('PWD_' + dept) || '');
+  return String(PropertiesService.getScriptProperties().getProperty('PWD_' + dept) || '').trim();
 }
 function adminPwd_() {
-  return String(PropertiesService.getScriptProperties().getProperty('PWD_ADMIN') || '');
+  var sp = PropertiesService.getScriptProperties();
+  // accept common name variants so a mis-typed property name still works
+  var v = sp.getProperty('PWD_ADMIN') || sp.getProperty('PWD_Admin') ||
+          sp.getProperty('PWD_admin') || sp.getProperty('ADMIN_PWD') || '';
+  return String(v).trim();
 }
 // Lightweight check for the sign-in screen (no task involved).
 function verifyLogin_(p) {
   var login = String(p.dept_login || '').trim();
-  var pwd = String(p.pwd || '');
+  var pwd = String(p.pwd || '').trim();
   if (!login || !pwd) return { ok: false, error: 'login_required' };
   var admin = adminPwd_();
   if (admin && pwd === admin) return { ok: true, admin: true, dept: login };
@@ -54,7 +60,7 @@ function verifyLogin_(p) {
 // Full check for a mutating action on a task owned by taskDept.
 function checkAuth_(p, taskDept) {
   var login = String(p.dept_login || '').trim();
-  var pwd = String(p.pwd || '');
+  var pwd = String(p.pwd || '').trim();
   var operator = String(p.operator || '').trim();
   if (!login || !pwd) return { ok: false, error: 'login_required' };
   if (!operator) return { ok: false, error: 'operator_required' };
@@ -70,7 +76,7 @@ function checkAuth_(p, taskDept) {
 // Decommissioning removes a task from compliance tracking, so it is ADMIN-only
 // (departments report the change; the Director records it). Requires PWD_ADMIN.
 function checkAdmin_(p) {
-  var pwd = String(p.pwd || '');
+  var pwd = String(p.pwd || '').trim();
   var operator = String(p.operator || '').trim();
   if (!operator) return { ok: false, error: 'operator_required' };
   var admin = adminPwd_();
@@ -85,6 +91,20 @@ function doGet(e) {
   }
   if (p.action === 'verify_pwd') {
     return json_(verifyLogin_(p));
+  }
+  if (p.action === 'props_check') {
+    var sp = PropertiesService.getScriptProperties().getProperties();
+    var names = [], padded = [];
+    for (var k in sp) {
+      if (k.indexOf('PWD') === 0 || k.indexOf('ADMIN') === 0) {
+        names.push(k);
+        if (String(sp[k]) !== String(sp[k]).trim()) padded.push(k);
+        if (k !== k.trim()) padded.push('(name has spaces) ' + k);
+      }
+    }
+    return json_({ ok: true, password_properties: names.sort(),
+                   admin_resolves: adminPwd_() !== '',
+                   values_with_stray_whitespace: padded });
   }
   return json_({ ok: false, error: 'POST tick_action / tick_report / reschedule; GET action=health' });
 }
