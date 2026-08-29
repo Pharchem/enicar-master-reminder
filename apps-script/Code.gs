@@ -92,20 +92,6 @@ function doGet(e) {
   if (p.action === 'verify_pwd') {
     return json_(verifyLogin_(p));
   }
-  if (p.action === 'props_check') {
-    var sp = PropertiesService.getScriptProperties().getProperties();
-    var names = [], padded = [];
-    for (var k in sp) {
-      if (k.indexOf('PWD') === 0 || k.indexOf('ADMIN') === 0) {
-        names.push(k);
-        if (String(sp[k]) !== String(sp[k]).trim()) padded.push(k);
-        if (k !== k.trim()) padded.push('(name has spaces) ' + k);
-      }
-    }
-    return json_({ ok: true, password_properties: names.sort(),
-                   admin_resolves: adminPwd_() !== '',
-                   values_with_stray_whitespace: padded });
-  }
   return json_({ ok: false, error: 'POST tick_action / tick_report / reschedule; GET action=health' });
 }
 
